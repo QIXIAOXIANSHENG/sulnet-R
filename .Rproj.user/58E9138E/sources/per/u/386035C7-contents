@@ -1,0 +1,85 @@
+library(devtools)
+n=500;p=200
+beta=c(rnorm(5),rep(0,p-5))
+x=matrix(rnorm(n*p,0,sqrt(0.5)) + rnorm(1,0,sqrt(0.5)),n,p)
+y=x%*%beta+rnorm(n,0,0.1)
+
+fit=sulnet(x,y,method = "suni")
+
+fit_2 = sulnet(x,y,method = "suni_2",alpha = NULL,lamPos = c(0,1,2),loo = FALSE)
+tryout_coef2D = coef(fit_2,s = c(0,0.3))
+
+fit_3 = sulnet(x,y,method = "suni_2",loo = FALSE)
+
+fit2D = sulnet2D(x,y,lamPos = seq(0,2,length.out = 10),alpha = NULL)#,alpha = seq(0,0.9,length.out = 11))
+
+cvfit2D = cv.sulnet2D(x,y,alpha = seq(0,0.9,length.out = 11))
+cvfitlam2D = cv.sulnet2D(x,y,lamPos = seq(0,2,length.out = 10),alpha = NULL)
+
+cvfit1dim2D = cv.sulnet2D(x,y,alpha = 0.5)
+
+
+
+
+
+
+library(uniLasso)
+library(MASS)
+n = 300;p=1000;p_true = 30;ntest = 100;sigma = 0.1;rho = 0.5
+Sigma <- matrix(rho, nrow = p, ncol = p)
+diag(Sigma) <- 1
+x <- mvrnorm(n = n, mu = rep(0, p), Sigma = Sigma)
+beta = c(rnorm(p_true),rep(0,p-p_true))
+y = x %*% beta + rnorm(n,0,sigma)
+xtest = mvrnorm(n = ntest, mu = rep(0, p), Sigma = Sigma)
+ytest = xtest %*% beta + rnorm(ntest,0,sigma)
+
+foldid = sample(1:10,n replace = TRUE)
+info = uniInfo(x,y,loo = TRUE)
+cvfit2D = cv.sulnet2D(x,y,alpha = seq(0,0.99,length.out = 11), 
+                      lambda.factor = 0.001, foldid = foldid)
+cvfit2Dl = cv.sulnet2D(x,y,alpha = NULL, lamPos = seq(0.01,3,length.out = 21), 
+                      lambda.factor = 0.001, foldid = foldid)
+sulnetf = cvfit2D$sulnet2D.fit$univariate.fit$fitted.values
+cvuni = cv.uniLasso(x,y,loo = TRUE, foldid = foldid)
+cvls = cv.sulnet(x,y,lambda.factor = 0.001, foldid = foldid)
+fitlsneg = cv.sulnet(sulnetf,y)
+fitneg = sulnet(sulnetf,y,method = "suni",lamPos = 0,negOnly = TRUE)
+fit2D = sulnet2D(x,y)
+sum((coef(cvfit2D)[[1]][-1]-beta)^2)
+sum((cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.1se]-beta)^2)
+sum((coef(cvls)[-1]-beta)^2)
+sum((coef(cvfit2Dl)[[1]][-1]-beta)^2)
+max(abs(crossprod(info$F,y)))/n
+
+sum((predict(cvfit2D,xtest)[[1]]-ytest)^2)
+sum((cbind2(1,xtest)%*%c(cvuni$glmnet.fit$a0[cvuni$lambda == cvuni$lambda.1se],
+                         cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.1se])-ytest)^2)
+sum((predict(cvls,xtest)-ytest)^2)
+sum((predict(cvfit2Dl,xtest)[[1]]-ytest)^2)
+
+sum(coef(cvfit2D)[[1]][-1]!=0)
+sum(cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.min]!=0)
+sum(coef(cvls)[-1]!=0)
+sum(coef(cvfit2Dl)[[1]][-1]!=0)
+
+mean(abs(info$beta[coef(cvfit2D)[[1]][-1]!=0]))
+mean(abs(info$beta[cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.min]!=0]))
+mean(abs(info$beta[coef(cvls)[-1]!=0]))
+mean(abs(info$beta[coef(cvfit2Dl)[[1]][-1]!=0]))
+
+mean(abs(beta[coef(cvfit2D)[[1]][-1]!=0]))
+mean(abs(beta[cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.min]!=0]))
+mean(abs(beta[coef(cvls)[-1]!=0]))
+mean(abs(beta[coef(cvfit2Dl)[[1]][-1]!=0]))
+
+sum(abs(sign(beta)-sign(coef(cvfit2D)[[1]][-1]))<=1)
+sum(abs(sign(beta)-sign(cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.min]))<=1)
+sum(abs(sign(beta)-sign(coef(cvls)[-1]))<=1)
+sum(abs(sign(beta)-sign(coef(c1 vfit2Dl)[[1]][-1]))<=1)
+
+sum(abs(sign(info$beta)-sign(coef(cvfit2D)[[1]][-1]))<=1)
+sum(abs(sign(info$beta)-sign(cvuni$glmnet.fit$beta[,cvuni$lambda == cvuni$lambda.min]))<=1)
+sum(abs(sign(info$beta)-sign(coef(cvls)[-1]))<=1)
+sum(abs(sign(info$beta)-sign(coef(cvfit2Dl)[[1]][-1]))<=1)
+

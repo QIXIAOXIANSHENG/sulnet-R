@@ -1,0 +1,112 @@
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQiA9IDEwMFxubiA9IDMwMFxucCA9IDEwMDBcbnBfdHJ1ZSA9IDMwXG5zaWdtYSA9IDFcblxubXNlID0gcmVwKE5BLEIqMylcbnN1cHBvcnQgPSByZXAoTkEsQiozKVxudGVzdF9lcnJvciA9IHJlcChOQSxCKjMpXG5cbmZvcihiIGluIDE6Qil7XG4gIHggPSBtYXRyaXgocm5vcm0obipwLDAsc3FydCgwLjUpKSArIHJub3JtKDEsMCxzcXJ0KDAuNSkpLCBuLCBwKVxuICBiZXRhID0gYyhybm9ybShwX3RydWUpLHJlcCgwLHAtcF90cnVlKSlcbiAgeSA9IHggJSolIGJldGEgKyBybm9ybShuLDAsc2lnbWEpXG4gIFxuICB4dGVzdCA9IG1hdHJpeChybm9ybShudGVzdCpwLDAsc3FydCgwLjUpKSArIHJub3JtKDEsMCxzcXJ0KDAuNSkpLCBudGVzdCwgcClcbiAgeXRlc3QgPSB4dGVzdCAlKiUgYmV0YSArIHJub3JtKG50ZXN0LDAsc2lnbWEpXG4gIFxuICAjIyBnZXQgdGhlIGxvbyBtYXRyaXggRiBmb3Igc29mdC11bmlsYXNzb1xuICBpbmZvID0gdW5pSW5mbyh4LHksXCJnYXVzc2lhblwiLGxvbyA9IFRSVUUpXG4gIFxuICAjIyBzb2Z0LXVuaWxhc3NvXG4gIGZpdF9zdW5pID0gY3YuZ2NkbmV0KGluZm8kRiwgeSwgaW50ZXJjZXB0ID0gVFJVRSwgc3RhbmRhcmRpemUgPSBGQUxTRSwgbWV0aG9kID0gXCJzdW5pXCIpXG4gIGJfdGVtcCA9ICBjb2VmKGZpdF9zdW5pKVxuICBiZXRhX3N1bmkgPSBiX3RlbXBbLTFdICogaW5mbyRiZXRhXG4gIGJldGFfc3VuaV9wcmVkID0gYyhiX3RlbXBbMV0rIHN1bShiX3RlbXBbLTFdICogaW5mbyRiZXRhMCksIGJldGFfc3VuaSlcbiAgXG4gICMjIHVuaWxhc3NvXG4gIGZpdF91bmkgPSBjdi51bmlMYXNzbyh4LHksIGluZm8gPSBpbmZvLCBmYW1pbHkgPSBcImdhdXNzaWFuXCIsIGludGVyY2VwdCA9IFRSVUUpXG4gIGJldGFfdW5pID0gYXMudmVjdG9yKGZpdF91bmkkZ2xtbmV0LmZpdCRiZXRhWyx3aGljaChmaXRfdW5pJGxhbWJkYS4xc2UgPT0gZml0X3VuaSRsYW1iZGEpXSlcbiAgXG4gICMjIGxhc3NvXG4gIGZpdF9scyA9IGN2LmdjZG5ldCh4LHksbWV0aG9kID0gXCJsc1wiLCBpbnRlcmNlcHQgPSBUUlVFLCBzdGFuZGFyZGl6ZSA9IFRSVUUpXG4gIGJldGFfbHMgPSBjb2VmKGZpdF9scylbLTFdXG4gIFxuICAjIyBtc2VcbiAgbXNlWygoYi0xKSozKzEpOihiKjMpXSA9IGMoc3VtKChiZXRhLWJldGFfc3VuaSleMiksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICBzdW0oKGJldGEtYmV0YV91bmkpXjIpLFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgc3VtKChiZXRhLWJldGFfbHMpXjIpKVxuICBcbiAgIyMgc3VwcG9ydFxuICBzdXBwb3J0WygoYi0xKSozKzEpOihiKjMpXSA9IGMoc3VtKGJldGFfc3VuaSE9MCksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgc3VtKGJldGFfdW5pIT0wKSxcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdW0oYmV0YV9scyE9MCkpXG4gIFxuICAjIyB0ZXN0IGVycm9yXG4gIG5ld194dGVzdCA9IGNiaW5kKHJlcCgxLG50ZXN0KSx4dGVzdClcbiAgdGVzdF9lcnJvclsoKGItMSkqMysxKTooYiozKV0gPSBjKHN1bSgobmV3X3h0ZXN0ICUqJSBiZXRhX3N1bmlfcHJlZCAtIHl0ZXN0KV4yKSxcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdW0oKG5ld194dGVzdCAlKiUgYyhmaXRfdW5pJGdsbW5ldC5maXQkYTBbd2hpY2goZml0X3VuaSRsYW1iZGEuMXNlID09IGZpdF91bmkkbGFtYmRhKV0sIGJldGFfdW5pKSAtIHl0ZXN0KV4yKSxcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdW0oKHByZWRpY3QoZml0X2xzLHh0ZXN0KSAtIHl0ZXN0KV4yKSlcbn1cbmBgYCJ9 -->
+
+```r
+B = 100
+n = 300
+p = 1000
+p_true = 30
+sigma = 1
+
+mse = rep(NA,B*3)
+support = rep(NA,B*3)
+test_error = rep(NA,B*3)
+
+for(b in 1:B){
+  x = matrix(rnorm(n*p,0,sqrt(0.5)) + rnorm(1,0,sqrt(0.5)), n, p)
+  beta = c(rnorm(p_true),rep(0,p-p_true))
+  y = x %*% beta + rnorm(n,0,sigma)
+  
+  xtest = matrix(rnorm(ntest*p,0,sqrt(0.5)) + rnorm(1,0,sqrt(0.5)), ntest, p)
+  ytest = xtest %*% beta + rnorm(ntest,0,sigma)
+  
+  ## get the loo matrix F for soft-unilasso
+  info = uniInfo(x,y,\"gaussian\",loo = TRUE)
+  
+  ## soft-unilasso
+  fit_suni = cv.gcdnet(info$F, y, intercept = TRUE, standardize = FALSE, method = \"suni\")
+  b_temp =  coef(fit_suni)
+  beta_suni = b_temp[-1] * info$beta
+  beta_suni_pred = c(b_temp[1]+ sum(b_temp[-1] * info$beta0), beta_suni)
+  
+  ## unilasso
+  fit_uni = cv.uniLasso(x,y, info = info, family = \"gaussian\", intercept = TRUE)
+  beta_uni = as.vector(fit_uni$glmnet.fit$beta[,which(fit_uni$lambda.1se == fit_uni$lambda)])
+  
+  ## lasso
+  fit_ls = cv.gcdnet(x,y,method = \"ls\", intercept = TRUE, standardize = TRUE)
+  beta_ls = coef(fit_ls)[-1]
+  
+  ## mse
+  mse[((b-1)*3+1):(b*3)] = c(sum((beta-beta_suni)^2),
+                           sum((beta-beta_uni)^2),
+                           sum((beta-beta_ls)^2))
+  
+  ## support
+  support[((b-1)*3+1):(b*3)] = c(sum(beta_suni!=0),
+                               sum(beta_uni!=0),
+                               sum(beta_ls!=0))
+  
+  ## test error
+  new_xtest = cbind(rep(1,ntest),xtest)
+  test_error[((b-1)*3+1):(b*3)] = c(sum((new_xtest %*% beta_suni_pred - ytest)^2),
+                                     sum((new_xtest %*% c(fit_uni$glmnet.fit$a0[which(fit_uni$lambda.1se == fit_uni$lambda)], beta_uni) - ytest)^2),
+                                     sum((predict(fit_ls,xtest) - ytest)^2))
+}
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+B = 100
+n = 300
+p = 1000
+p_true = 30
+sigma = 1
+
+mse = rep(NA,B*3)
+support = rep(NA,B*3)
+test_error = rep(NA,B*3)
+
+for(b in 1:B){
+  x = matrix(rnorm(n*p,0,sqrt(0.5)) + rnorm(1,0,sqrt(0.5)), n, p)
+  beta = c(rnorm(p_true),rep(0,p-p_true))
+  y = x %*% beta + rnorm(n,0,sigma)
+  
+  xtest = matrix(rnorm(ntest*p,0,sqrt(0.5)) + rnorm(1,0,sqrt(0.5)), ntest, p)
+  ytest = xtest %*% beta + rnorm(ntest,0,sigma)
+  
+  ## get the loo matrix F for soft-unilasso
+  info = uniInfo(x,y,\"gaussian\",loo = TRUE)
+  
+  ## soft-unilasso
+  fit_suni = cv.gcdnet(info$F, y, intercept = TRUE, standardize = FALSE, method = \"suni\")
+  b_temp =  coef(fit_suni)
+  beta_suni = b_temp[-1] * info$beta
+  beta_suni_pred = c(b_temp[1]+ sum(b_temp[-1] * info$beta0), beta_suni)
+  
+  ## unilasso
+  fit_uni = cv.uniLasso(x,y, info = info, family = \"gaussian\", intercept = TRUE)
+  beta_uni = as.vector(fit_uni$glmnet.fit$beta[,which(fit_uni$lambda.1se == fit_uni$lambda)])
+  
+  ## lasso
+  fit_ls = cv.gcdnet(x,y,method = \"ls\", intercept = TRUE, standardize = TRUE)
+  beta_ls = coef(fit_ls)[-1]
+  
+  ## mse
+  mse[((b-1)*3+1):(b*3)] = c(sum((beta-beta_suni)^2),
+                           sum((beta-beta_uni)^2),
+                           sum((beta-beta_ls)^2))
+  
+  ## support
+  support[((b-1)*3+1):(b*3)] = c(sum(beta_suni!=0),
+                               sum(beta_uni!=0),
+                               sum(beta_ls!=0))
+  
+  ## test error
+  new_xtest = cbind(rep(1,ntest),xtest)
+  test_error[((b-1)*3+1):(b*3)] = c(sum((new_xtest %*% beta_suni_pred - ytest)^2),
+                                     sum((new_xtest %*% c(fit_uni$glmnet.fit$a0[which(fit_uni$lambda.1se == fit_uni$lambda)], beta_uni) - ytest)^2),
+                                     sum((predict(fit_ls,xtest) - ytest)^2))
+}
+```"

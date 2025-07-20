@@ -1,0 +1,166 @@
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiVFJVRSBiZXRhOiBcXHRcXHRcXHRcXHQgMiwgMiwgMSwgMCwgMFwiKVxuYGBgIn0= -->
+
+```r
+cat(\"TRUE beta: \t\t\t\t 2, 2, 1, 0, 0\")
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"TRUE beta: \t\t\t\t 2, 2, 1, 0, 0\")
+```"
+"1","TRUE beta: 				 2, 2, 1, 0, 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDAsIGNvZWZmaWNpZW50czogXFx0XCIsY29lZihjdi5nY2RuZXQoZix5LG1ldGhvZCA9IFwic3VuaVwiLCBsYW1Qb3MgPSAwLCBmb2xkaWQgPSBmb2xkaWQpKVstMV0gKiBpbmZvJGJldGEpXG5gYGAifQ== -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 0, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 0, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 0, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 0, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 0, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDAuMSwgY29lZmZpY2llbnRzOiBcXHRcIixjb2VmKGN2LmdjZG5ldChmLHksbWV0aG9kID0gXCJzdW5pXCIsIGxhbVBvcyA9IDAuMSwgZm9sZGlkID0gZm9sZGlkKSlbLTFdICogaW5mbyRiZXRhKVxuYGBgIn0= -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 0.1, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 0.1, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 0.1, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 0.1, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 0.1, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDAuNSwgY29lZmZpY2llbnRzOiBcXHRcIixjb2VmKGN2LmdjZG5ldChmLHksbWV0aG9kID0gXCJzdW5pXCIsIGxhbVBvcyA9IDAuNSwgZm9sZGlkID0gZm9sZGlkKSlbLTFdICogaW5mbyRiZXRhKVxuYGBgIn0= -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 0.5, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 0.5, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 0.5, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 0.5, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 0.5, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDEsIGNvZWZmaWNpZW50czogXFx0XCIsY29lZihjdi5nY2RuZXQoZix5LG1ldGhvZCA9IFwic3VuaVwiLCBsYW1Qb3MgPSAxLCBmb2xkaWQgPSBmb2xkaWQpKVstMV0gKiBpbmZvJGJldGEpXG5gYGAifQ== -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 1, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 1, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 1, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 1, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 1, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDEwLCBjb2VmZmljaWVudHM6IFxcdFwiLGNvZWYoY3YuZ2NkbmV0KGYseSxtZXRob2QgPSBcInN1bmlcIiwgbGFtUG9zID0gMTAsIGZvbGRpZCA9IGZvbGRpZCkpWy0xXSAqIGluZm8kYmV0YSlcbmBgYCJ9 -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 10, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 10, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 10, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDFlNywgY29lZmZpY2llbnRzOiBcXHRcIixjb2VmKGN2LmdjZG5ldChmLHksbWV0aG9kID0gXCJzdW5pXCIsIGxhbVBvcyA9IDEwZTYsIGZvbGRpZCA9IGZvbGRpZCkpWy0xXSAqIGluZm8kYmV0YSlcbmBgYCJ9 -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 1e7, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10e6, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 1e7, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10e6, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 1e7, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDFlMTAsIGNvZWZmaWNpZW50czogXFx0XCIsY29lZihjdi5nY2RuZXQoZix5LG1ldGhvZCA9IFwic3VuaVwiLCBsYW1Qb3MgPSAxMGU5LCBmb2xkaWQgPSBmb2xkaWQpKVstMV0gKiBpbmZvJGJldGEpXG5gYGAifQ== -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 1e10, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10e9, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 1e10, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10e9, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 1e10, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxuc29mdC11bmksIGxhbVBvcyA9IDFlMjEsIGNvZWZmaWNpZW50czogXFx0XCIsY29lZihjdi5nY2RuZXQoZix5LG1ldGhvZCA9IFwic3VuaVwiLCBsYW1Qb3MgPSAxMGUyMCwgZm9sZGlkID0gZm9sZGlkKSlbLTFdICogaW5mbyRiZXRhKVxuYGBgIn0= -->
+
+```r
+cat(\"\nsoft-uni, lamPos = 1e21, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10e20, foldid = foldid))[-1] * info$beta)
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nsoft-uni, lamPos = 1e21, coefficients: \t\",coef(cv.gcdnet(f,y,method = \"suni\", lamPos = 10e20, foldid = foldid))[-1] * info$beta)
+```"
+"1","
+soft-uni, lamPos = 1e21, coefficients: 	 1.99818 1.943342 0.9466936 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYiA9IGN2LnVuaUxhc3NvKFgseSxmb2xkaWQgPSBmb2xkaWQsIGxvbyA9IEZBTFNFKVxuY2F0KFwiXFxudW5pbGFzc28sIGNvZWZmaWNpZW50czogXFx0XFx0XCIsYiRnbG1uZXQuZml0JGJldGFbLGIkbGFtYmRhID09IGIkbGFtYmRhLjFzZV0pXG5gYGAifQ== -->
+
+```r
+b = cv.uniLasso(X,y,foldid = foldid, loo = FALSE)
+cat(\"\nunilasso, coefficients: \t\t\",b$glmnet.fit$beta[,b$lambda == b$lambda.1se])
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+b = cv.uniLasso(X,y,foldid = foldid, loo = FALSE)
+cat(\"\nunilasso, coefficients: \t\t\",b$glmnet.fit$beta[,b$lambda == b$lambda.1se])
+```"
+"1","
+unilasso, coefficients: 		 1.994882 1.939954 0.9400873 0 0
+"
+"1","
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2F0KFwiXFxubGFzc28sICBjb2VmZmljaWVudHM6IFxcdFxcdFxcdFwiLGNvZWYoY3YuZ2NkbmV0KFgseSwgZm9sZGlkID0gZm9sZGlkKSlbLTFdKVxuYGBgIn0= -->
+
+```r
+cat(\"\nlasso,  coefficients: \t\t\t\",coef(cv.gcdnet(X,y, foldid = foldid))[-1])
+```
+
+<!-- rnb-source-end -->
+"
+"0","```r
+cat(\"\nlasso,  coefficients: \t\t\t\",coef(cv.gcdnet(X,y, foldid = foldid))[-1])
+```"
+"1","
+lasso,  coefficients: 			 1.972825 1.918911 0.9553385 0 0
+"

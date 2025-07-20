@@ -1,0 +1,17 @@
+"0","generate_orthonormal_matrix <- function(n, p) {
+  if (p >= n) stop(\"p must be less than n\")
+  
+  mat <- matrix(rnorm(n * (p + 1)), nrow = n)
+  
+  mat_centered <- scale(mat, center = TRUE, scale = FALSE)
+  
+  qr_result <- qr(mat_centered)
+  Q <- qr.Q(qr_result)
+  
+  X <- Q[, 1:p]
+  
+  col_norms <- apply(X, 2, function(col) sqrt(sum(col^2)))
+  X_scaled <- sweep(X, 2, col_norms, \"/\") * n
+  
+  return(X_scaled)
+}"

@@ -1,0 +1,6 @@
+"0",""
+"0","b = cv.uniLasso(X,y,foldid = foldid, loo = FALSE)"
+"0","cat(""unilasso, coefficients: \t\t"",b$glmnet.fit$beta[,b$lambda == b$lambda.1se])"
+"1","unilasso, coefficients: 		 0 0 0 0 0"
+"0","cat(""lasso,  coefficients: \t\t\t"",coef(cv.gcdnet(X,y, foldid = foldid))[-1])"
+"1","lasso,  coefficients: 			 0 0 0 0 0"

@@ -1,0 +1,15 @@
+"0","cat(""TRUE beta: \t\t\t\t 2, 2, 1, 0, 0"")"
+"1","TRUE beta: 				 2, 2, 1, 0, 0"
+"0","lam_temp = c(0, 0.1, 0.5, 1, 10, 1e7, 1e10, 1e21)"
+"0","fit_temp = data.frame(matrix(NA,5, length(lam_temp)))"
+"0","colnames(fit_temp) = lam_temp"
+"0","for (l in 1:length(lam_temp)){"
+"0","  fit_temp[,l] = coef(cv.gcdnet(f,y,method = ""suni"", lamPos = 0, foldid = foldid))[-1] * info$beta"
+"0","}"
+"2","G1;错误于Diagonal(x = unibeta) %*% beta_temp: non-conformable arguments
+收捲时出错: 堆叠上没有这么多的环境框
+H1;Errorh: no more error handlers available (recursive errors?); invoking 'abort' restart
+g"
+"0","cat(""soft-unilasso, coefficients:"")"
+"1","soft-unilasso, coefficients:"
+"0","print(round(fit_temp,5))"
