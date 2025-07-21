@@ -8,7 +8,7 @@ sulnet(
   x,
   y,
   nlambda = 100,
-  method = c("ls", "suni"),
+  method = c("ls", "suni", "test"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
   lambda2 = 0,

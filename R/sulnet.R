@@ -236,7 +236,7 @@
 ##' @useDynLib sulnet, .registration = TRUE
 ##'
 sulnet <- function(x, y, nlambda = 100,
-                   method = c("ls", "suni"),
+                   method = c("ls", "suni","test"),
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
@@ -305,6 +305,9 @@ sulnet <- function(x, y, nlambda = 100,
   }
 ################################################################################
   fit <- switch(method,
+                test = testpath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                nobs, nvars, vnames),
                 suni = sunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                   pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                   nobs, nvars, vnames, alpha, ignore_lamPos),
