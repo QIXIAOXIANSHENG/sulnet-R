@@ -236,7 +236,7 @@
 ##' @useDynLib sulnet, .registration = TRUE
 ##'
 sulnet2D <- function(x, y, nlambda = 100,
-                   method = c("suni_2", "ls", "suni"),
+                   method = c("suni_2", "sunicold","suniforcecold" ),
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
@@ -246,10 +246,6 @@ sulnet2D <- function(x, y, nlambda = 100,
   ################################################################################
   ## data setup
   method <- match.arg(method)
-  if(method != "suni_2"){
-    warning("Currently other methods are not supported. Switching to suni2D")
-    method = "suni_2"
-  }
   this.call <- match.call()
   y <- drop(y)
   x <- as.matrix(x)
@@ -270,7 +266,6 @@ sulnet2D <- function(x, y, nlambda = 100,
     stop("The size of L2 penalty factor must be same as the number of input variables")
   if (lambda2 < 0)
     stop("lambda2 must be non-negative")
-  maxit <- as.integer(maxit)
   lam2 <- as.double(lambda2)
   pf <- as.double(pf)
   pf2 <- as.double(pf2)
@@ -279,10 +274,10 @@ sulnet2D <- function(x, y, nlambda = 100,
   eps <- as.double(eps)
   dfmax <- as.integer(dfmax)
   pmax <- as.integer(pmax)
-  lamPos <- as.double(lamPos)
+  lamPos <- as.double(rev(sort(lamPos)))
   ignore_lamPos = FALSE
   if(!is.null(alpha)){
-    alpha <- as.double(alpha)
+    alpha <- as.double(rev(sort(alpha)))
     ignore_lamPos = TRUE
   }
   if (!missing(exclude)) {
@@ -307,16 +302,19 @@ sulnet2D <- function(x, y, nlambda = 100,
     ulam <- as.double(rev(sort(lambda)))
     nlam <- as.integer(length(lambda))
   }
+  maxit <- ifelse(method == "suni_2",as.integer(maxit), as.integer(maxit * nlam))
   ################################################################################
   fit <- switch(method,
                 suni_2 = sunipath_2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                     pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                     nobs, nvars, vnames, alpha, ignore_lamPos),
-                suni = sunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                sunicold  = sunicold(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                 pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                 nobs, nvars, vnames, alpha, ignore_lamPos),
-                ls = lspath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                            pmax, jd, pf, pf2, maxit, lam2, nobs, nvars, vnames))
+                suniforcecold  = suniforcecold(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                     pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                     nobs, nvars, vnames, alpha, ignore_lamPos)
+                )
   if (is.null(lambda))
     fit$lambda <- lamfix(fit$lambda)
   fit$call <- this.call

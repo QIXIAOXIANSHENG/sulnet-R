@@ -8,7 +8,7 @@ sulnet2D(
   x,
   y,
   nlambda = 100,
-  method = c("suni_2", "ls", "suni"),
+  method = c("suni_2", "sunicold", "suniforcecold"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
   lambda2 = 0,

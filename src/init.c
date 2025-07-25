@@ -13,6 +13,7 @@
 /* .Fortran calls */
 extern void F77_NAME(loofit)(void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(traverse_zigzag)(void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(sunicoldstart)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(suniwalpha)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(lslassonet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(soft_unilassonet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
@@ -20,6 +21,7 @@ extern void F77_NAME(soft_unilassonet)(void *, void *, void *, void *, void *, v
 static const R_FortranMethodDef FortranEntries[] = {
     {"loofit",        (DL_FUNC) &F77_NAME(loofit),        8},
     {"traverse_zigzag", (DL_FUNC) &F77_NAME(traverse_zigzag), 7},
+    {"sunicoldstart", (DL_FUNC) &F77_NAME(sunicoldstart), 28},
     {"suniwalpha",    (DL_FUNC) &F77_NAME(suniwalpha),    28},
     {"lslassonet",    (DL_FUNC) &F77_NAME(lslassonet),    25},
     {"soft_unilassonet", (DL_FUNC) &F77_NAME(soft_unilassonet), 26},
