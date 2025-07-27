@@ -274,10 +274,10 @@ sulnet2D <- function(x, y, nlambda = 100,
   eps <- as.double(eps)
   dfmax <- as.integer(dfmax)
   pmax <- as.integer(pmax)
-  lamPos <- as.double(rev(sort(lamPos)))
+  lamPos <- as.double(sort(lamPos))
   ignore_lamPos = FALSE
   if(!is.null(alpha)){
-    alpha <- as.double(rev(sort(alpha)))
+    alpha <- as.double(sort(alpha))
     ignore_lamPos = TRUE
   }
   if (!missing(exclude)) {

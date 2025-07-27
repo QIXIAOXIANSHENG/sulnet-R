@@ -109,10 +109,10 @@ getmin2D <- function(lambda, alpha, cvm, cvsd, use_alpha) {
   # 1se, same rule for choosing alpha/lamPos and lambda
   semin <- (cvm + cvsd)[alphaidmin,lambdaidmin]
   idse <- which(cvm <= semin, arr.ind = TRUE)
-  idse <- t(as.matrix(idse[idse[,1]>=alphaidmin,]))
-  idse <- t(as.matrix(idse[idse[,2]<=lambdaidmin,]))
+  idse <- matrix(idse[idse[,1]>=alphaidmin,],ncol = 2)
+  idse <- matrix(idse[idse[,2]<=lambdaidmin,],ncol = 2)
   rowse <- which((cvm + cvsd)[idse] == max((cvm + cvsd)[idse]),arr.ind = TRUE)
-  idse <- t(as.matrix(idse[rowse,]))
+  idse <- matrix(idse[rowse,],ncol = 2)
 
   alpha.id <- which(max(alpha[idse[,1]]) == alpha[idse[,1]])
   lambda.id <- which.max(lambda[idse[alpha.id,2]])
