@@ -78,7 +78,6 @@ error.bars <- function(x, upper, lower, width = 0.02,
   range(upper, lower)
 }
 
-
 getmin <- function(lambda, cvm, cvsd) {
   cvmin <- min(cvm)
   idmin <- cvm <= cvmin
@@ -205,6 +204,16 @@ lamfix <- function(lam) {
   lam
 }
 
+multuni <- function(beta_temp, beta0_temp, unibeta, unibeta0){
+  row_idx <- beta_temp@i + 1
+  col_ptrs <- beta_temp@p
+  col_idx <- rep(seq_along(col_ptrs[-1]), diff(col_ptrs))
+  beta_result <- beta_temp
+  beta_result@x <- beta_temp@x * unibeta[cbind(row_idx, col_idx)]
+  list(beta = beta_result,
+       b0 = beta0_temp + colSums(unibeta0 * beta_temp)
+  )
+}
 
 nonzero <- function(beta, bystep = FALSE) {
   ns <- ncol(beta)
