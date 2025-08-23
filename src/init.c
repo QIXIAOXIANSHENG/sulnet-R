@@ -20,6 +20,7 @@ extern void F77_NAME(soft_unilassonet)(void *, void *, void *, void *, void *, v
 extern void F77_NAME(loofit_ts)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loofit_s)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loofit_st)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(adasuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_FortranMethodDef FortranEntries[] = {
     {"loofit",        (DL_FUNC) &F77_NAME(loofit),        8},
@@ -31,6 +32,7 @@ static const R_FortranMethodDef FortranEntries[] = {
     {"loofit_ts",     (DL_FUNC) &F77_NAME(loofit_ts),     11},
     {"loofit_s",      (DL_FUNC) &F77_NAME(loofit_s),      11},
     {"loofit_st",     (DL_FUNC) &F77_NAME(loofit_st),     10},
+    {"adasuniNET",    (DL_FUNC) &F77_NAME(adasuninet),    28},
     {NULL, NULL, 0}
 };
 

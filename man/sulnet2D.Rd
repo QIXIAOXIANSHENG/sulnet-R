@@ -8,7 +8,7 @@ sulnet2D(
   x,
   y,
   nlambda = 100,
-  method = c("suni_2", "sunicold", "suniforcecold"),
+  method = c("suni_2", "sunicold", "suniforcecold", "adasuni", "adasuni2"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
   lambda2 = 0,
@@ -262,7 +262,7 @@ data(FHT)
 # 1. solution paths for the LASSO penalized least squares.
 # To use LASSO set lambda2 = 0.
 
-m1 <- sulnet(x = FHT$x, y = FHT$y_reg, lambda2 = 0, method = "ls")
+m1 <- sulnet2D(x = FHT$x, y = FHT$y_reg)
 plot(m1)
 
 

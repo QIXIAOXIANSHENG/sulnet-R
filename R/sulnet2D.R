@@ -227,7 +227,7 @@
 ##' # 1. solution paths for the LASSO penalized least squares.
 ##' # To use LASSO set lambda2 = 0.
 ##'
-##' m1 <- sulnet(x = FHT$x, y = FHT$y_reg, lambda2 = 0, method = "ls")
+##' m1 <- sulnet2D(x = FHT$x, y = FHT$y_reg)
 ##' plot(m1)
 ##'
 ##'
@@ -236,7 +236,7 @@
 ##' @useDynLib sulnet, .registration = TRUE
 ##'
 sulnet2D <- function(x, y, nlambda = 100,
-                   method = c("suni_2", "sunicold","suniforcecold" ),
+                   method = c("suni_2", "sunicold","suniforcecold", "adasuni", "adasuni2" ),
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
@@ -302,7 +302,11 @@ sulnet2D <- function(x, y, nlambda = 100,
     ulam <- as.double(rev(sort(lambda)))
     nlam <- as.integer(length(lambda))
   }
-  maxit <- ifelse(method == "suni_2",as.integer(maxit), as.integer(maxit * nlam))
+  maxit <- ifelse(grepl("cold", method),as.integer(maxit), as.integer(maxit * nlam))
+  if(method == "adasuni"){
+    if(lambda2 == 0) lambda2 = 0.1
+
+  }
   ################################################################################
   fit <- switch(method,
                 suni_2 = sunipath_2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
@@ -313,7 +317,13 @@ sulnet2D <- function(x, y, nlambda = 100,
                                 nobs, nvars, vnames, alpha, ignore_lamPos),
                 suniforcecold  = suniforcecold(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                      pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                     nobs, nvars, vnames, alpha, ignore_lamPos)
+                                     nobs, nvars, vnames, alpha, ignore_lamPos),
+                adasuni = adasunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                      pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                      nobs, nvars, vnames, alpha, ignore_lamPos),
+                adasuni2 = adasunipath2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                       nobs, nvars, vnames, alpha, ignore_lamPos)
                 )
   if (is.null(lambda))
     fit$lambda <- lamfix(fit$lambda)
