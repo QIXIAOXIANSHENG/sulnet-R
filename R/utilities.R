@@ -110,7 +110,13 @@ getmin2D <- function(lambda, alpha, cvm, cvsd, use_alpha) {
   idse <- which(cvm <= semin, arr.ind = TRUE)
   idse <- matrix(idse[idse[,1]>=alphaidmin,],ncol = 2)
   idse <- matrix(idse[idse[,2]<=lambdaidmin,],ncol = 2)
-  rowse <- which((cvm + cvsd)[idse] == max((cvm + cvsd)[idse]),arr.ind = TRUE)
+
+  ## method 1, in the selected region choose the row/col index s.t. cvm max
+  #rowse <- which((cvm + cvsd)[idse] == max((cvm + cvsd)[idse]),arr.ind = TRUE)
+  ## method 2, in the selected region choose the row/col index s.t. alpha/lamPos max, then lambda max
+  rowse <- which(idse[,1] == max(idse[,1]))
+  rowse <- rowse[which(idse[rowse,2] == min(idse[rowse,2]))]
+
   idse <- matrix(idse[rowse,],ncol = 2)
 
   alpha.id <- which(max(alpha[idse[,1]]) == alpha[idse[,1]])
