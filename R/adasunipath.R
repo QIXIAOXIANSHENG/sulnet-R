@@ -33,6 +33,8 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
   ################################################################################
   ## if only computing the negative steps
 
+  lam2 = as.double(0)
+
   if(negOnly){
     if(!is.null(alpha)){
       n_alpha = length(alpha)

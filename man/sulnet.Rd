@@ -17,7 +17,7 @@ sulnet(
   exclude,
   dfmax = nvars + 1,
   pmax = min(dfmax * 1.2, nvars),
-  standardize = FALSE,
+  standardize = TRUE,
   intercept = TRUE,
   eps = 1e-08,
   maxit = 1e+06,

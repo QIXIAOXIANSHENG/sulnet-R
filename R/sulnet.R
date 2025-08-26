@@ -240,7 +240,7 @@ sulnet <- function(x, y, nlambda = 100,
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
-                   pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
+                   pmax = min(dfmax * 1.2, nvars), standardize = TRUE,
                    intercept = TRUE, eps = 1e-08, maxit = 1e+06, lamPos = 0.1,
                    loo = TRUE, alpha = 0.2, negOnly = FALSE) {
 ################################################################################
