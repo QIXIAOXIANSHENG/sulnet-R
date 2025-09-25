@@ -1,6 +1,6 @@
 ##' @import Matrix
 
-adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  missexc, jd, pf,
+adasunilambdapath  <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  missexc, jd, pf,
                         pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
                         alpha, ignore_lamPos) {
   ################################################################################
@@ -45,7 +45,7 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
       jerrmat = vector("list", length = n_alpha)
 
       for(a in seq_along(alpha)){
-        fit <- .Fortran("adasuniNET", lam2, lamPos, nobs,nvars, x, as.double(y), new_jd, pf, pf2,
+        fit <- .Fortran("suniwalpha", lam2, lamPos, nobs,nvars, x, as.double(y), new_jd, pf, pf2,
                         dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                         nalam = integer(1), b0 = double(nlam),
                         beta = double(pmax * nlam), ibeta = integer(pmax),
@@ -88,7 +88,7 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
       jerrmat = vector("list", length = n_alpha)
 
       for(a in seq_along(lamPos)){
-        fit <- .Fortran("adasuniNET", lam2,lamPos[a], nobs, nvars, x, as.double(y), new_jd, pf, pf2,
+        fit <- .Fortran("suniwalpha", lam2,lamPos[a], nobs, nvars, x, as.double(y), new_jd, pf, pf2,
                         dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                         nalam = integer(1), b0 = double(nlam),
                         beta = double(pmax * nlam), ibeta = integer(pmax),
@@ -154,7 +154,7 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
     betamat = vector("list", length = n_alpha)
 
     for(a in seq_along(alpha)){
-      fit <- .Fortran("adasuniNET", lam2, lamPos, nobs, nvars, f, as.double(y), new_jd, pf, pf2,
+      fit <- .Fortran("suniwalpha", lam2, lamPos, nobs, nvars, f, as.double(y), new_jd, pf, pf2,
                       dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                       nalam = integer(1), b0 = double(nlam),
                       beta = double(pmax * nlam), ibeta = integer(pmax),
@@ -225,7 +225,7 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
     betamat = vector("list", length = n_alpha)
 
     for(a in seq_along(lamPos)){
-      fit <- .Fortran("adasuniNET", lam2, lamPos[a], nobs, nvars, f, as.double(y), new_jd, pf, pf2,
+      fit <- .Fortran("suniwalpha", lam2, lamPos[a], nobs, nvars, f, as.double(y), new_jd, pf, pf2,
                       dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                       nalam = integer(1), b0 = double(nlam),
                       beta = double(pmax * nlam), ibeta = integer(pmax),

@@ -236,7 +236,8 @@
 ##' @useDynLib sulnet, .registration = TRUE
 ##'
 sulnet2D <- function(x, y, nlambda = 100,
-                   method = c("suni_2", "sunicold","suniforcecold", "adasuni", "adasuni2" ),
+                   method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest",
+                              "adasunilambdatest","adasuni2lambdatest"),
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
@@ -293,7 +294,7 @@ sulnet2D <- function(x, y, nlambda = 100,
     if (lambda.factor >= 1)
       stop("lambda.factor should be less than 1")
     flmin <- as.double(lambda.factor)
-    ulam <- double(1)
+    ulam <- double(nlam)
   } else {
     ## flmin=1 if user define lambda
     flmin <- as.double(1)
@@ -303,7 +304,7 @@ sulnet2D <- function(x, y, nlambda = 100,
     nlam <- as.integer(length(lambda))
   }
   maxit <- ifelse(grepl("cold", method),as.integer(maxit), as.integer(maxit * nlam))
-  if(method == "adasuni"){
+  if(grepl("adasuni",method) ){
     if(lambda2 == 0) lambda2 = 0.1
 
   }
@@ -312,18 +313,21 @@ sulnet2D <- function(x, y, nlambda = 100,
                 suni_2 = sunipath_2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                     pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                     nobs, nvars, vnames, alpha, ignore_lamPos),
-                sunicold  = sunicold(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                nobs, nvars, vnames, alpha, ignore_lamPos),
-                suniforcecold  = suniforcecold(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                     pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                     nobs, nvars, vnames, alpha, ignore_lamPos),
                 adasuni = adasunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                       nobs, nvars, vnames, alpha, ignore_lamPos),
                 adasuni2 = adasunipath2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                        pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                       nobs, nvars, vnames, alpha, ignore_lamPos)
+                                       nobs, nvars, vnames, alpha, ignore_lamPos),
+                sunilambdatest = sunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                                pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                                nobs, nvars, vnames, alpha, ignore_lamPos),
+                adasunilambdatest = adasunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                                      pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                                      nobs, nvars, vnames, alpha, ignore_lamPos),
+                adasuni2lambdatest = adasuni2lambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
+                                                       nobs, nvars, vnames, alpha, ignore_lamPos)
                 )
   if (is.null(lambda))
     fit$lambda <- lamfix(fit$lambda)

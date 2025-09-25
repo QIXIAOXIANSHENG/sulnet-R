@@ -1,4 +1,4 @@
-SUBROUTINE getlambda(nobs, nvars, nlam,ju,ulam,x, y, pf, flmin)
+SUBROUTINE getlambda(nobs, nvars, nlam, ulam, x, y, pf, flmin)
     IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: big = 9.9E30
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
@@ -6,7 +6,7 @@ SUBROUTINE getlambda(nobs, nvars, nlam,ju,ulam,x, y, pf, flmin)
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nlam
-    INTEGER :: ju(nvars)
+    
 
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
@@ -15,16 +15,22 @@ SUBROUTINE getlambda(nobs, nvars, nlam,ju,ulam,x, y, pf, flmin)
     DOUBLE PRECISION :: pf(nvars)
 
     INTEGER :: l,j
+    INTEGER :: ju(nvars)
     DOUBLE PRECISION :: u
     DOUBLE PRECISION:: alf
     DOUBLE PRECISION :: al
     DOUBLE PRECISION :: altemp(nlam)
+    DOUBLE PRECISION :: xmean(nvars)
+    DOUBLE PRECISION :: xnorm(nvars)
+    DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: maj
 
-
+    maj = 2.0D0*maj
     IF (flmin < 1.0D0) THEN
         flmin = MAX(mfl, flmin)
         alf = flmin**(1.0D0/(DBLE(nlam) - 1.0D0))
     END IF
+
+    CALL standard(nobs, nvars, x, ju, 0, 1, xmean, xnorm, maj)
 
     DO l = 1, nlam
         ! -------- COMPUTING LAMBDA -------- !
@@ -56,7 +62,8 @@ SUBROUTINE getlambda(nobs, nvars, nlam,ju,ulam,x, y, pf, flmin)
 
     IF (flmin < 1.0D0) THEN
         ulam = altemp
-        altemp = LOG(altemp(nlam))
-        ulam(1) = exp(2 * altemp(2) - altemp(3))
+        altemp = LOG(altemp)
+        ulam(1) = EXP(2 * altemp(2) - altemp(3))
+        ! ulam(1) = 100.0D0
     END IF
 END SUBROUTINE getlambda

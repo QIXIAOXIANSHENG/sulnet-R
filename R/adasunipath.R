@@ -13,13 +13,13 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
   ## adaptive lasso for choosing coefficients
   if(missexc){
     lsfit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE)
-    adapf <- as.double(1/sapply(coef(lsfit)[-1], function(x) max(abs(x),1e-6)))
+    adapf <- 1/pmax.int(abs(coef(lsfit)[-1]), 1e-6)
     adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
                         pf = adapf, lambda2 = lam2)
   }else{
     lsfit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
                        exclude = jd[-1])
-    adapf <- as.double(1/sapply(coef(lsfit)[-1], function(x) max(abs(x),1e-6)))
+    adapf <- 1/pmax.int(abs(coef(lsfit)[-1]), 1e-6)
     adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
                         pf = adapf, lambda2 = lam2,
                         exclude = jd[-1])
@@ -31,9 +31,28 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
   new_jd <- as.integer(new_jd)
 
   ################################################################################
+  ## lambda setup
+  if(negOnly){
+    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+                          y, pf, flmin, PACKAGE = "sulnet")
+  }else{
+    unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+                       beta0 = double(nvars),
+                       beta  = double(nvars),
+                       fit   = double(nobs * nvars),
+                       PACKAGE = "sulnet")
+    f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+    storage.mode(f) <- "double"
+    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+                          y, pf, flmin, PACKAGE = "sulnet")
+  }
+  ulam <- getlambda$ulam
+  flmin = as.double(1)
+
+  ################################################################################
   ## if only computing the negative steps
 
-  lam2 = as.double(0)
+  lam2 <- as.double(0)
 
   if(negOnly){
     if(!is.null(alpha)){
@@ -131,16 +150,6 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
 
   ################################################################################
   ## univariate fit
-
-  unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
-                     beta0 = double(nvars),
-                     beta  = double(nvars),
-                     fit   = double(nobs * nvars),
-                     PACKAGE = "sulnet")
-  f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
-
-
-
 
   if(!is.null(alpha)){
     n_alpha = length(alpha)
