@@ -15,22 +15,26 @@ SUBROUTINE getlambda(nobs, nvars, nlam, ulam, x, y, pf, flmin)
     DOUBLE PRECISION :: pf(nvars)
 
     INTEGER :: l,j
+    INTEGER :: ierr
+    INTEGER :: isd = 0
+    INTEGER :: intr = 1
     INTEGER :: ju(nvars)
     DOUBLE PRECISION :: u
     DOUBLE PRECISION:: alf
-    DOUBLE PRECISION :: al
+    DOUBLE PRECISION :: al = 0.0D0
     DOUBLE PRECISION :: altemp(nlam)
     DOUBLE PRECISION :: xmean(nvars)
     DOUBLE PRECISION :: xnorm(nvars)
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: maj
 
+    ALLOCATE (maj(1:nvars), STAT=ierr)
     maj = 2.0D0*maj
     IF (flmin < 1.0D0) THEN
         flmin = MAX(mfl, flmin)
         alf = flmin**(1.0D0/(DBLE(nlam) - 1.0D0))
     END IF
 
-    CALL standard(nobs, nvars, x, ju, 0, 1, xmean, xnorm, maj)
+    CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
 
     DO l = 1, nlam
         ! -------- COMPUTING LAMBDA -------- !
@@ -66,4 +70,5 @@ SUBROUTINE getlambda(nobs, nvars, nlam, ulam, x, y, pf, flmin)
         ulam(1) = EXP(2 * altemp(2) - altemp(3))
         ! ulam(1) = 100.0D0
     END IF
+    DEALLOCATE (maj)
 END SUBROUTINE getlambda
