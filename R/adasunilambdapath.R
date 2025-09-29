@@ -31,6 +31,25 @@ adasunilambdapath  <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
   new_jd <- as.integer(new_jd)
 
   ################################################################################
+  ## lambda setup
+  if(negOnly){
+    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+                          y, pf, flmin, PACKAGE = "sulnet")
+  }else{
+    unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+                       beta0 = double(nvars),
+                       beta  = double(nvars),
+                       fit   = double(nobs * nvars),
+                       PACKAGE = "sulnet")
+    f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+    storage.mode(f) <- "double"
+    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+                          y, pf, flmin, PACKAGE = "sulnet")
+  }
+  ulam <- getlambda$ulam
+  flmin = as.double(1)
+
+  ################################################################################
   ## if only computing the negative steps
 
   lam2 <- as.double(0)
