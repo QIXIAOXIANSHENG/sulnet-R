@@ -25,6 +25,7 @@ sulnet2D(
   lamPos = 0.1,
   loo = TRUE,
   alpha = seq(0, 0.5, length.out = 11),
+  asuweight = c("ols", "lasso", "lasso_ols", "univar"),
   negOnly = FALSE
 )
 }
@@ -124,6 +125,8 @@ in the soft unilasso model. Default is \code{TRUE}.}
 and soft-unilasso penalty \code{lamPos}. If \code{alpha} is not \code{NULL}, then
 \code{alpha} will be used to generate different \code{lamPos}. Otherwise,
 \code{lamPos} will be used. Default is \code{seq(0, 0.5, length.out = 100)}}
+
+\item{asuweight}{description}
 
 \item{negOnly}{the logical variable determining if only the second step in the
 soft unilasso model is fitted. Default is \code{FALSE}.}

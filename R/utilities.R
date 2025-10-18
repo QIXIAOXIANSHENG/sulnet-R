@@ -210,6 +210,27 @@ lamfix <- function(lam) {
   lam
 }
 
+lasso_ols_supp <- function(x,y,jd = NULL){
+  if(is.null(jd)){
+    fit_ls = cv.sulnet(x,y)
+    beta_ls = coef(fit_ls, s = fit_ls$lambda.min)[-1]
+    x_new = x[, which(as.vector(beta_ls) != 0)]
+    ols = lm.fit(cbind(1, x_new), y)$coefficients[-1]
+    ols_pf = rep(1e-6,ncol(x))
+    ols_pf[which(as.vector(beta_ls) != 0)] = ols
+    ols_pf
+  }else{
+    beta_ls = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
+                           exclude = jd[-1]),
+                 s = fit_ls$lambda.min)[-1]
+    x_new = x[, which(as.vector(beta_ls) != 0)]
+    ols = lm.fit(cbind(1, x_new), y)$coefficients[-1]
+    ols_pf = rep(1e-6,ncol(x))
+    ols_pf[which(as.vector(beta_ls) != 0)] = ols
+    ols_pf
+  }
+}
+
 multuni <- function(beta_temp, beta0_temp, unibeta, unibeta0){
   row_idx <- beta_temp@i + 1
   col_ptrs <- beta_temp@p

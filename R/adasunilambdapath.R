@@ -2,7 +2,7 @@
 
 adasunilambdapath  <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  missexc, jd, pf,
                         pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
-                        alpha, ignore_lamPos) {
+                        alpha, ignore_lamPos, asuweight) {
   ################################################################################
   ## data setup
   y <- as.double(y)
@@ -11,15 +11,26 @@ adasunilambdapath  <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
 
   ################################################################################
   ## adaptive lasso for choosing coefficients
+  if(nvars > nobs & asuweight == "ols") asuweight <- "lasso_ols"
   if(missexc){
-    lsfit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE)
-    adapf <- 1/pmax.int(abs(coef(lsfit)[-1]), 1e-6)
+    adapf <- switch(asuweight,
+                    ols = lm.fit(cbind(rep(1,nobs),x),y)$coefficients[-1],
+                    lasso = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE),
+                                 s = fit_ls$lambda.min)[-1],
+                    lasso_ols = lasso_ols_supp(x,y),
+                    univar = uniFit(x,y)$beta)
+    adapf <- 1/pmax.int(abs(adapf), 1e-6)
     adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
                         pf = adapf, lambda2 = lam2)
   }else{
-    lsfit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
-                       exclude = jd[-1])
-    adapf <- 1/pmax.int(abs(coef(lsfit)[-1]), 1e-6)
+    adapf <- switch(asuweight,
+                    ols = lm.fit(cbind(rep(1,nobs),x[,-jd[-1]]),y)$coefficients[-1],
+                    lasso = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
+                                           exclude = jd[-1]),
+                                 s = fit_ls$lambda.min)[-1],
+                    lasso_ols = lasso_ols_supp(x,y,jd = jd),
+                    univar = uniFit(x,y)$beta)
+    adapf <- 1/pmax.int(abs(adapf), 1e-6)
     adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
                         pf = adapf, lambda2 = lam2,
                         exclude = jd[-1])

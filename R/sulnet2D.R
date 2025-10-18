@@ -82,6 +82,7 @@
 ##'   and soft-unilasso penalty \code{lamPos}. If \code{alpha} is not \code{NULL}, then
 ##'   \code{alpha} will be used to generate different \code{lamPos}. Otherwise,
 ##'   \code{lamPos} will be used. Default is \code{seq(0, 0.5, length.out = 100)}
+##' @param asuweight description
 ##' @return An object with S3 class \code{\link{sulnet}}. \item{call}{the call
 ##'   that produced this object} \item{b0}{intercept sequence of length
 ##'   \code{length(lambda)}} \item{beta}{a \code{p*length(lambda)} matrix of
@@ -243,10 +244,13 @@ sulnet2D <- function(x, y, nlambda = 100,
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
                    pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
                    intercept = TRUE, eps = 1e-08, maxit = 1e+06, lamPos = 0.1,
-                   loo = TRUE, alpha = seq(0, 0.5, length.out = 11),negOnly = FALSE) {
+                   loo = TRUE, alpha = seq(0, 0.5, length.out = 11),
+                   asuweight = c("ols", "lasso", "lasso_ols","univar"),
+                   negOnly = FALSE) {
   ################################################################################
   ## data setup
   method <- match.arg(method)
+  asuweight <- match.arg(asuweight)
   this.call <- match.call()
   y <- drop(y)
   x <- as.matrix(x)
@@ -315,19 +319,19 @@ sulnet2D <- function(x, y, nlambda = 100,
                                     nobs, nvars, vnames, alpha, ignore_lamPos),
                 adasuni = adasunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                      nobs, nvars, vnames, alpha, ignore_lamPos),
+                                      nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
                 adasuni2 = adasunipath2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                        pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                       nobs, nvars, vnames, alpha, ignore_lamPos),
+                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
                 sunilambdatest = sunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                                 pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                                 nobs, nvars, vnames, alpha, ignore_lamPos),
                 adasunilambdatest = adasunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                                      nobs, nvars, vnames, alpha, ignore_lamPos),
+                                                      nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
                 adasuni2lambdatest = adasuni2lambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                                        pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                                       nobs, nvars, vnames, alpha, ignore_lamPos)
+                                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight)
                 )
   if (is.null(lambda))
     fit$lambda <- lamfix(fit$lambda)
