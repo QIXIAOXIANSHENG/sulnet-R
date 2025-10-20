@@ -21,7 +21,7 @@ sulnet2D(
   standardize = FALSE,
   intercept = TRUE,
   eps = 1e-08,
-  maxit = 1e+06,
+  maxit = 1e+05,
   lamPos = 0.1,
   loo = TRUE,
   alpha = seq(0, 0.5, length.out = 11),

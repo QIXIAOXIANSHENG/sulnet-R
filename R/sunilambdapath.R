@@ -23,7 +23,7 @@ sunilambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,
     getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
                           y, pf, flmin, PACKAGE = "sulnet")
   }
-  ulam <- getlambda$ulam
+  ulam <- as.double(getlambda$ulam)
   flmin = as.double(1)
 
   ################################################################################
