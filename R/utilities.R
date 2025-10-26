@@ -210,6 +210,20 @@ lamfix <- function(lam) {
   lam
 }
 
+lasso_w_supp <- function(x,y,jd = NULL){
+  if(is.null(jd)){
+    fit_ls <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE)
+    lasso <- coef(fit_ls,
+                 s = fit_ls$lambda.min)[-1]
+  }else{
+    fit_ls <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
+                        exclude = jd[-1])
+    lasso <- coef(fit_ls,
+                 s = fit_ls$lambda.min)[-1]
+  }
+  pmax(abs(lasso),1e-6)
+}
+
 lasso_ols_supp <- function(x,y,jd = NULL){
   if(is.null(jd)){
     fit_ls = cv.sulnet(x,y)

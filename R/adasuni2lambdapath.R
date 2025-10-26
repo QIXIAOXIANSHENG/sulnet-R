@@ -15,8 +15,7 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
   if(missexc){
     adapf <- switch(asuweight,
                     ols = lm.fit(cbind(rep(1,nobs),x),y)$coefficients[-1],
-                    lasso = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE),
-                                 s = fit_ls$lambda.min)[-1],
+                    lasso = lasso_w_supp(x,y,jd = jd),
                     lasso_ols = lasso_ols_supp(x,y),
                     univar = uniFit(x,y)$beta)
     adapf <- 1/pmax.int(abs(adapf), 1e-6)
@@ -25,9 +24,7 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
   }else{
     adapf <- switch(asuweight,
                     ols = lm.fit(cbind(rep(1,nobs),x[,-jd[-1]]),y)$coefficients[-1],
-                    lasso = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
-                                           exclude = jd[-1]),
-                                 s = fit_ls$lambda.min)[-1],
+                    lasso = lasso_w_supp(x,y,jd = jd),
                     lasso_ols = lasso_ols_supp(x,y,jd = jd),
                     univar = uniFit(x,y)$beta)
     adapf <- 1/pmax.int(abs(adapf), 1e-6)
@@ -44,8 +41,16 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
   ################################################################################
   ## lambda setup
   if(negOnly){
-    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+    while(TRUE){
+      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
                           y, pf, flmin, PACKAGE = "sulnet")
+      ulamtemp <- as.double(getlambda$ulam)
+      if(!anyNA(ulamtemp)){
+        flmin = as.double(1)
+        ulam <- ulamtemp
+        break
+      }
+    }
   }else{
     unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
                        beta0 = double(nvars),
@@ -54,12 +59,17 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
                        PACKAGE = "sulnet")
     f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
     storage.mode(f) <- "double"
-    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+    while(TRUE){
+      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
                           y, pf, flmin, PACKAGE = "sulnet")
+      ulamtemp <- as.double(getlambda$ulam)
+      if(!anyNA(ulamtemp)){
+        flmin = as.double(1)
+        ulam <- ulamtemp
+        break
+      }
+    }
   }
-  ulam <- as.double(getlambda$ulam)
-  flmin = as.double(1)
-
   ################################################################################
   ## if only computing the negative steps
 

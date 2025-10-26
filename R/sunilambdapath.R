@@ -9,9 +9,17 @@ sunilambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,
   storage.mode(x) <- "double"
   loo <- as.logical(loo)
 
-  if(negOnly){
-    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+   if(negOnly){
+    while(TRUE){
+      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
                           y, pf, flmin, PACKAGE = "sulnet")
+      ulamtemp <- as.double(getlambda$ulam)
+      if(!anyNA(ulamtemp)){
+        flmin = as.double(1)
+        ulam <- ulamtemp
+        break
+      }
+    }
   }else{
     unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
                        beta0 = double(nvars),
@@ -20,11 +28,17 @@ sunilambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,
                        PACKAGE = "sulnet")
     f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
     storage.mode(f) <- "double"
-    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+    while(TRUE){
+      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
                           y, pf, flmin, PACKAGE = "sulnet")
+      ulamtemp <- as.double(getlambda$ulam)
+      if(!anyNA(ulamtemp)){
+        flmin = as.double(1)
+        ulam <- ulamtemp
+        break
+      }
+    }
   }
-  ulam <- as.double(getlambda$ulam)
-  flmin = as.double(1)
 
   ################################################################################
   ## if only computing the negative steps
