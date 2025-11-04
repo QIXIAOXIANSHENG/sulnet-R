@@ -97,8 +97,9 @@ SUBROUTINE loofit(nobs, nvars, x, y, loo, beta0, beta, fit)
         END IF
     END DO
 
-    beta = beta / xnorm
     beta0 = beta0 - beta*xmean / xnorm
+    beta = beta / xnorm
+    
 
 
     ! -------- LEAVE-ONE-OUT FITTING -------- !

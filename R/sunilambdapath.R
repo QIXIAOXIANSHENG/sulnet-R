@@ -9,7 +9,7 @@ sunilambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,
   storage.mode(x) <- "double"
   loo <- as.logical(loo)
 
-   if(negOnly){
+  if(negOnly){
     while(TRUE){
       getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
                           y, pf, flmin, PACKAGE = "sulnet")
@@ -20,6 +20,11 @@ sunilambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,
         break
       }
     }
+    # if(flmin<1){
+    #   ulam <- sulnet(x,y,nlambda = nlam,standardize = as.logical(isd),
+    #                  intercept = as.logical(intr))$lambda
+    #   ulam = as.double(ulam)
+    # }
   }else{
     unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
                        beta0 = double(nvars),
@@ -38,8 +43,13 @@ sunilambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,
         break
       }
     }
+    # if(flmin<1){
+    #   ulam <- sulnet(f,y,nlambda = nlam, standardize = as.logical(isd),
+    #                  intercept = as.logical(intr))$lambda
+    #   ulam = as.double(ulam)
+    # }
   }
-
+  flmin <- as.double(1)
   ################################################################################
   ## if only computing the negative steps
 

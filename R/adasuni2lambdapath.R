@@ -51,6 +51,11 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
         break
       }
     }
+    # if(flmin<1){
+    #   ulam <- sulnet(x,y,nlambda = nlam,standardize = as.logical(isd),
+    #                  intercept = as.logical(intr))$lambda
+    #   ulam = as.double(ulam)
+    # }
   }else{
     unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
                        beta0 = double(nvars),
@@ -69,7 +74,13 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
         break
       }
     }
+    # if(flmin<1){
+    #   ulam <- sulnet(f,y,nlambda = nlam, standardize = as.logical(isd),
+    #                  intercept = as.logical(intr))$lambda
+    #   ulam = as.double(ulam)
+    # }
   }
+  flmin <- as.double(1)
   ################################################################################
   ## if only computing the negative steps
 

@@ -32,6 +32,6 @@ uniFit <- function(x,y,loo = TRUE){
   f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
   return(list(fitted_values = f,
               beta = unifit$beta,
-              b0 = unifit$beta,
+              b0 = unifit$beta0,
               loo = loo))
 }

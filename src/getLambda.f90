@@ -16,8 +16,8 @@ SUBROUTINE getlambda(nobs, nvars, nlam, ulam, x, y, pf, flmin)
 
     INTEGER :: l,j
     INTEGER :: ierr
-    INTEGER :: isd = 0
-    INTEGER :: intr = 1
+    INTEGER :: isd
+    INTEGER :: intr
     INTEGER :: ju(nvars)
     DOUBLE PRECISION :: u
     DOUBLE PRECISION:: alf
@@ -34,7 +34,15 @@ SUBROUTINE getlambda(nobs, nvars, nlam, ulam, x, y, pf, flmin)
         alf = flmin**(1.0D0/(DBLE(nlam) - 1.0D0))
     END IF
 
-    CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
+    CALL chkvars(nobs, nvars, x, ju)
+
+    isd = 0
+    intr = 1
+    ! CALL DBLEPR("x0", -1, x(1,:), 14)
+    CALL standard(nobs, nvars, x, ju, 0, 1, xmean, xnorm, maj)
+    ! CALL DBLEPR("x", -1, x(1,:), 14)
+    ! CALL DBLEPR("y", -1, y(1:14), 14)
+    ! CALL DBLEPR("xmean", -1, xmean, 14)
 
     DO l = 1, nlam
         ! -------- COMPUTING LAMBDA -------- !
@@ -48,18 +56,25 @@ SUBROUTINE getlambda(nobs, nvars, nlam, ulam, x, y, pf, flmin)
             ELSE IF (l == 1) THEN
                 al = big
                 altemp(l) = al
+                ! CALL DBLEPR("altemp", -1, altemp(1), 1)
             ELSE IF (l == 2) THEN
                 al = 0.0D0
                 DO j = 1, nvars
                     IF (ju(j) /= 0) THEN
                         IF (pf(j) > 0.0D0) THEN
                             u = DOT_PRODUCT(y, x(:, j))
+                            ! CALL DBLEPR("x", -1, x(1:14,j), 14)
+                            ! CALL INTPR("j", -1, j, 1)
+                            ! RETURN
+                            ! CALL DBLEPR("u", -1, u, 1)
                             al = MAX(al, ABS(u)/pf(j))
+                            ! CALL DBLEPR("al", -1, al, 1)
                         END IF
                     END IF
                 END DO
                 al = al*alf/nobs
                 altemp(l) = al
+                
             END IF
         END IF
     END DO
