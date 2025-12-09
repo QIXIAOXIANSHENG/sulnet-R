@@ -238,7 +238,8 @@
 ##'
 sulnet2D <- function(x, y, nlambda = 100,
                    method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest",
-                              "adasunilambdatest","adasuni2lambdatest"),
+                              "adasunilambdatest","adasuni2lambdatest",
+                              "septhresh"),
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
@@ -331,7 +332,10 @@ sulnet2D <- function(x, y, nlambda = 100,
                                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
                 adasuni2lambdatest = adasuni2lambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                                        pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight)
+                                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
+                septhresh = septhreshpath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                          pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+                                          nobs, nvars, vnames, alpha, ignore_lamPos)
                 )
   if (is.null(lambda))
     fit$lambda <- lamfix(fit$lambda)

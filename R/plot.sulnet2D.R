@@ -53,11 +53,19 @@
 ##' @importFrom stats approx
 ##' @import plotly
 ##' @export
-plot.sulnet2D <- function(x, xvar = c("norm", "lambda"),  color = FALSE,
-                        label = FALSE, ...) {
+plot.sulnet2D <- function(x, xvar = c("norm", "lambda"), yvar = c("final_coef","middle_coef"),
+                          color = FALSE, 
+                          label = FALSE, ...) {
   op <- par(no.readonly = TRUE)
   on.exit(par(op))
-  betaall <- x$beta
+  yvar <- match.arg(yvar)
+  if(yvar == "final_coef"){
+    betaall <- x$beta
+    ylab <- "Final Coefficients"
+  }else{
+    betaall <- x$fbeta
+    ylab <- "Middle Coefficients"
+  }
   lambda <- x$lambda
   dfall <- x$df
   xvar <- match.arg(xvar)
@@ -82,7 +90,7 @@ plot.sulnet2D <- function(x, xvar = c("norm", "lambda"),  color = FALSE,
       iname <- "Log Lambda"
     })
     xlab <- iname
-    ylab <- "Coefficients"
+    ylab <- ylab
     dotlist <- list(...)
     type <- dotlist$type
 

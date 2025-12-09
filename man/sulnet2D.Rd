@@ -9,7 +9,7 @@ sulnet2D(
   y,
   nlambda = 100,
   method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest", "adasunilambdatest",
-    "adasuni2lambdatest"),
+    "adasuni2lambdatest", "septhresh"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
   lambda2 = 0,

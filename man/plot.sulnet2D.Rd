@@ -4,7 +4,14 @@
 \alias{plot.sulnet2D}
 \title{Plot coefficients from a "sulnet" object}
 \usage{
-\method{plot}{sulnet2D}(x, xvar = c("norm", "lambda"), color = FALSE, label = FALSE, ...)
+\method{plot}{sulnet2D}(
+  x,
+  xvar = c("norm", "lambda"),
+  yvar = c("final_coef", "middle_coef"),
+  color = FALSE,
+  label = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{fitted \code{\link{sulnet}} model}
