@@ -33,7 +33,8 @@ cv.sunipath_2 <- function(outlist, lambda, alpha, x, y, foldid, pred.loss, delta
   cvraw <- lapply(predmatlist, function(predmat){(y-predmat)^2})
   N <- lapply(predmatlist, function(predmat){length(y) - apply(is.na(predmat), 2, sum)})
   cvm <- lapply(cvraw,function(x){apply(x, 2, mean, na.rm = TRUE)})
-  cvsd <- lapply(seq_along(cvraw),function(x){sqrt(apply(scale(cvraw[[x]], cvm[[x]], FALSE)^2,
+  cvsd <- lapply(seq_along(cvraw),function(x){
+    sqrt(apply(scale(cvraw[[x]], cvm[[x]], FALSE)^2,
                      2, mean, na.rm = TRUE)/(N[[x]] - 1))})
   cvm <- do.call(rbind, cvm)
   cvsd <- do.call(rbind, cvsd)

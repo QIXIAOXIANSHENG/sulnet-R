@@ -1,6 +1,6 @@
 ##' @import Matrix
 
-septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, pf,
+septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, pf, # nolint
                        pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
                        alpha, ignore_lamPos) {
   ################################################################################
@@ -11,9 +11,9 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
 
   if(negOnly){
     while(TRUE){
-      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+      getlambdagauss <- .Fortran("getlambdagauss", nobs, nvars, nlam, ulam = ulam, x,
                           y, pf, flmin, PACKAGE = "sulnet")
-      ulamtemp <- as.double(getlambda$ulam)
+      ulamtemp <- as.double(getlambdagauss$ulam)
       if(!anyNA(ulamtemp)){
         flmin = as.double(1)
         ulam <- as.double(2*ulamtemp)
@@ -34,9 +34,9 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
     f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
     storage.mode(f) <- "double"
     while(TRUE){
-      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+      getlambdagauss <- .Fortran("getlambdagauss", nobs, nvars, nlam, ulam = ulam, f,
                           y, pf, flmin, PACKAGE = "sulnet")
-      ulamtemp <- as.double(getlambda$ulam)
+      ulamtemp <- as.double(getlambdagauss$ulam)
       if(!anyNA(ulamtemp)){
         flmin = as.double(1)
         ulam <- as.double(2*ulamtemp)
@@ -72,13 +72,13 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
                         alpha = as.double(alpha[a]), iglamPos = as.logical(ignore_lamPos),
                         PACKAGE = "sulnet")
         outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-        b0list[[paste0("alpha_", alpha[a])]] = outlist$b0
+        b0list[[paste0("alpha_", alpha[a])]] <- outlist$b0
         betamat[[a]] <- outlist$beta
         dfmat[[a]] <- outlist$df
         npassesmat[[a]] <- fit$npass
         jerrmat[[a]] <- fit$jerr
       }
-      alphaname = paste0("alpha_", alpha)
+      alphaname <- paste0("alpha_", alpha)
       names(betamat) <- alphaname
       names(dfmat) <- alphaname
       names(npassesmat) <- alphaname
@@ -98,12 +98,12 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
                       negOnly = negOnly)
 
     }else{
-      n_alpha = length(lamPos)
-      b0list = list()
-      betamat = vector("list", length = n_alpha)
-      dfmat = vector("list", length = n_alpha)
-      npassesmat = vector("list", length = n_alpha)
-      jerrmat = vector("list", length = n_alpha)
+      n_alpha <- length(lamPos)
+      b0list <- list()
+      betamat <- vector("list", length = n_alpha)
+      dfmat <- vector("list", length = n_alpha)
+      npassesmat <- vector("list", length = n_alpha)
+      jerrmat <- vector("list", length = n_alpha)
 
       for(a in seq_along(lamPos)){
         fit <- .Fortran("septhresh", lam2,lamPos[a], nobs, nvars, x, as.double(y), jd, pf, pf2,
@@ -115,19 +115,19 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
                         alpha = as.double(0.5), iglamPos = as.logical(ignore_lamPos),
                         PACKAGE = "sulnet")
         outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-        b0list[[paste0("lamPos_", lamPos[a])]] = outlist$b0
+        b0list[[paste0("lamPos_", lamPos[a])]] <- outlist$b0
         betamat[[a]] <- outlist$beta
         dfmat[[a]] <- outlist$df
         npassesmat[[a]] <- fit$npass
         jerrmat[[a]] <- fit$jerr
       }
-      alphaname = paste0("lamPos_", lamPos)
+      alphaname <- paste0("lamPos_", lamPos)
       names(betamat) <- alphaname
       names(dfmat) <- alphaname
       names(npassesmat) <- alphaname
       names(jerrmat) <- alphaname
-      dim = c(n_alpha, outlist$dim)
-      lambda_total = outlist$lambda
+      dim <- c(n_alpha, outlist$dim)
+      lambda_total <- outlist$lambda
 
       outlist <- list(b0 = b0list,
                       beta = betamat,
@@ -161,15 +161,15 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
 
 
   if(!is.null(alpha)){
-    n_alpha = length(alpha)
-    fb0list = list()
-    fbetamat = vector("list", length = n_alpha)
-    dfmat = vector("list", length = n_alpha)
-    npassesmat = vector("list", length = n_alpha)
-    jerrmat = vector("list", length = n_alpha)
+    n_alpha <- length(alpha)
+    fb0list <- list()
+    fbetamat <- vector("list", length = n_alpha)
+    dfmat <- vector("list", length = n_alpha)
+    npassesmat <- vector("list", length = n_alpha)
+    jerrmat <- vector("list", length = n_alpha)
 
-    b0list = list()
-    betamat = vector("list", length = n_alpha)
+    b0list <- list()
+    betamat <- vector("list", length = n_alpha)
 
     for(a in seq_along(alpha)){
       fit <- .Fortran("septhresh", lam2, lamPos, nobs, nvars, f, as.double(y), jd, pf, pf2,
@@ -181,14 +181,14 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
                       alpha = as.double(alpha[a]), iglamPos = as.logical(ignore_lamPos),
                       PACKAGE = "sulnet")
       outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-      ones = rep(1,fit$nalam)
+      ones <- rep(1, fit$nalam)
       unibeta <- outer(unifit$beta, ones)
       unibeta0 <- outer(unifit$beta0, ones)
 
-      beta_temp = outlist$beta
-      beta0_temp = outlist$b0
+      beta_temp <- outlist$beta
+      beta0_temp <- outlist$b0
 
-      fb0list[[paste0("alpha_", alpha[a])]] = beta0_temp
+      fb0list[[paste0("alpha_", alpha[a])]] <- beta0_temp
       fbetamat[[a]] <- beta_temp
       dfmat[[a]] <- outlist$df
       npassesmat[[a]] <- fit$npass
@@ -201,17 +201,17 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
       beta_result <- beta_temp
       beta_result@x <- beta_temp@x * unibeta[cbind(row_idx, col_idx)]
 
-      betamat[[a]] = beta_result
-      b0list[[paste0("alpha_", alpha[a])]] = beta0_temp + colSums(unibeta0 * beta_temp)
+      betamat[[a]] <- beta_result
+      b0list[[paste0("alpha_", alpha[a])]] <- beta0_temp + colSums(unibeta0 * beta_temp)
     }
-    alphaname = paste0("alpha_", alpha)
+    alphaname <- paste0("alpha_", alpha)
     names(fbetamat) <- alphaname
     names(betamat) <- alphaname
     names(dfmat) <- alphaname
     names(npassesmat) <- alphaname
     names(jerrmat) <- alphaname
-    dim = c(n_alpha, outlist$dim)
-    lambda_total = outlist$lambda
+    dim <- c(n_alpha, outlist$dim)
+    lambda_total <- outlist$lambda
 
     outlist <- list(b0 = b0list,
                     beta = betamat,
@@ -232,15 +232,15 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
     )
 
   }else{
-    n_alpha = length(lamPos)
-    fb0list = list()
-    fbetamat = vector("list", length = n_alpha)
-    dfmat = vector("list", length = n_alpha)
-    npassesmat = vector("list", length = n_alpha)
-    jerrmat = vector("list", length = n_alpha)
+    n_alpha <- length(lamPos)
+    fb0list <- list()
+    fbetamat <- vector("list", length = n_alpha)
+    dfmat <- vector("list", length = n_alpha)
+    npassesmat <- vector("list", length = n_alpha)
+    jerrmat <- vector("list", length = n_alpha)
 
-    b0list = list()
-    betamat = vector("list", length = n_alpha)
+    b0list <- list()
+    betamat <- vector("list", length = n_alpha)
 
     for(a in seq_along(lamPos)){
       fit <- .Fortran("septhresh", lam2, lamPos[a], nobs, nvars, f, as.double(y), jd, pf, pf2,
@@ -252,14 +252,14 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
                       alpha = as.double(0.5), iglamPos = as.logical(ignore_lamPos),
                       PACKAGE = "sulnet")
       outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-      ones = rep(1,fit$nalam)
+      ones <- rep(1, fit$nalam)
       unibeta <- outer(unifit$beta, ones)
       unibeta0 <- outer(unifit$beta0, ones)
 
-      beta_temp = outlist$beta
-      beta0_temp = outlist$b0
+      beta_temp <- outlist$beta
+      beta0_temp <- outlist$b0
 
-      fb0list[[paste0("lamPos_", lamPos[a])]] = beta0_temp
+      fb0list[[paste0("lamPos_", lamPos[a])]] <- beta0_temp
       fbetamat[[a]] <- beta_temp
       dfmat[[a]] <- outlist$df
       npassesmat[[a]] <- fit$npass
@@ -272,17 +272,17 @@ septhreshpath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, 
       beta_result <- beta_temp
       beta_result@x <- beta_temp@x * unibeta[cbind(row_idx, col_idx)]
 
-      betamat[[a]] = beta_result
-      b0list[[paste0("lamPos_", lamPos[a])]] = beta0_temp + colSums(unibeta0 * beta_temp)
+      betamat[[a]] <- beta_result
+      b0list[[paste0("lamPos_", lamPos[a])]] <- beta0_temp + colSums(unibeta0 * beta_temp)
     }
-    alphaname = paste0("lamPos_", lamPos)
+    alphaname <- paste0("lamPos_", lamPos)
     names(fbetamat) <- alphaname
     names(betamat) <- alphaname
     names(dfmat) <- alphaname
     names(npassesmat) <- alphaname
     names(jerrmat) <- alphaname
-    dim = c(n_alpha, outlist$dim)
-    lambda_total = outlist$lambda
+    dim <- c(n_alpha, outlist$dim)
+    lambda_total <- outlist$lambda
 
     outlist <- list(b0 = b0list,
                     beta = betamat,

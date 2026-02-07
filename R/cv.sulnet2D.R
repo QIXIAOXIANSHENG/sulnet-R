@@ -85,7 +85,7 @@
 
 ##'
 ##' @export
-cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0,0.5,length.out = 11),
+cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0, 0.5, length.out = 11),
                       pred.loss = c("misclass", "loss"),
                       nfolds = 5, foldid, ...) {
   if (missing(pred.loss))
@@ -94,14 +94,14 @@ cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0,0.5,length.out = 11),
   N <- nrow(x)
   ## Fit the model once to get dimensions etc of output
   y <- drop(y)
-  sulnet2D.object <- sulnet2D(x, y, lambda = lambda,alpha = alpha,
+  sulnet2D.object <- sulnet2D(x, y, lambda = lambda, alpha = alpha,
                           ...)
   lambda <- sulnet2D.object$lambda
 
   if(sulnet2D.object$use_alpha){
-    alpha = sulnet2D.object$alpha
+    alpha <- sulnet2D.object$alpha
   }else{
-    alpha = sulnet2D.object$lamPos
+    alpha <- sulnet2D.object$lamPos
   }
 
   ## predict -> coef
@@ -145,7 +145,7 @@ cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0,0.5,length.out = 11),
                 nzero = nz,
                 name = cvname, sulnet2D.fit = sulnet2D.object)
   }
-  lamin <- getmin2D(lambda, alpha, cvm, cvsd, sulnet2D.object$use_alpha )
+  lamin <- getmin2D(lambda, alpha, cvm, cvsd, sulnet2D.object$use_alpha)
   obj <- c(out, as.list(lamin))
   class(obj) <- "cv.sulnet2D"
   obj

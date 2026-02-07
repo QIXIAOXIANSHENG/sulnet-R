@@ -10,6 +10,7 @@ sulnet2D(
   nlambda = 100,
   method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest", "adasunilambdatest",
     "adasuni2lambdatest", "septhresh"),
+  family = c("gaussian", "binomial"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
   lambda2 = 0,
@@ -39,7 +40,7 @@ classification.}
 \item{nlambda}{the number of \code{lambda} values - default is 100.}
 
 \item{method}{a character string specifying the loss function to use, valid
-options are: \itemize{ \item \code{"ls"} least square loss. \item \code{"suni"}
+options are: \itemize{ \item \code{"ls"} least square loss. \item \code{"suni"} # nolint
 soft unilasso loss. } Default is \code{"ls"}.}
 
 \item{lambda.factor}{The factor for getting the minimal lambda in

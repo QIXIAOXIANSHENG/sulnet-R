@@ -16,8 +16,7 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
   if(missexc){
     adapf <- switch(asuweight,
                     ols = lm.fit(cbind(rep(1,nobs),x),y)$coefficients[-1],
-                    lasso = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE),
-                                 s = fit_ls$lambda.min)[-1],
+                    lasso = lasso_w_supp(x,y,jd = jd),
                     lasso_ols = lasso_ols_supp(x,y),
                     univar = uniFit(x,y)$beta)
     adapf <- 1/pmax.int(abs(adapf), 1e-6)
@@ -26,10 +25,8 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
   }else{
     adapf <- switch(asuweight,
                     ols = lm.fit(cbind(rep(1,nobs),x[,-jd[-1]]),y)$coefficients[-1],
-                    lasso = coef(cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
-                                           exclude = jd[-1]),
-                                 s = fit_ls$lambda.min)[-1],
-                    lasso_ols = lasso_ols_supp(x,y,jd = jd),
+                    lasso = lasso_w_supp(x,y,jd = jd),
+                    lasso_ols = lasso_ols_supp(x,y),
                     univar = uniFit(x,y)$beta)
     adapf <- 1/pmax.int(abs(adapf), 1e-6)
     adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
@@ -45,7 +42,7 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
   ################################################################################
   ## lambda setup
   if(negOnly){
-    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+    getlambdagauss <- .Fortran("getlambdagauss", nobs, nvars, nlam, ulam = ulam, x,
                           y, pf, flmin, PACKAGE = "sulnet")
   }else{
     unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
@@ -55,10 +52,10 @@ adasunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  m
                        PACKAGE = "sulnet")
     f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
     storage.mode(f) <- "double"
-    getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+    getlambdagauss <- .Fortran("getlambdagauss", nobs, nvars, nlam, ulam = ulam, f,
                           y, pf, flmin, PACKAGE = "sulnet")
   }
-  ulam <- getlambda$ulam
+  ulam <- getlambdagauss$ulam
   flmin = as.double(1)
 
   ################################################################################

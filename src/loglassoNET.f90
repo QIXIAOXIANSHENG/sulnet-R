@@ -1,23 +1,23 @@
 ! ---------------------------------------------------------------------------- !
-! soft_unilassoNET.f90: THE GCD ALGORITHM FOR LEAST SQUARES REGRESSION
+! loglassoNET.f90: THE GCD ALGORITHM FOR LOGISTIC REGRESSION
 ! ---------------------------------------------------------------------------- !
 !
 ! USAGE:
 !
-! CALL soft_unilassoNET(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, nlam, &
-!      & flmin, ulam, eps, isd, intr, maxit, nalam, b0, beta, ibeta, nbeta, &
+! CALL loglassoNET(lam2, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, nlam,&
+!      & flmin, ulam, eps, isd, intr, maxit, nalam, b0, beta, ibeta, nbeta,&
 !      & alam, npass, jerr)
 !
 ! INPUT ARGUMENTS:
 !
-!    lam2 = regularization parameter for the quadratic penalty
-!           of the coefficients
-!    lamPos = regularization parameter for the negativity penalty
+!    lam2 = regularization parameter for the quadratic penalty of the
+!           coefficients
 !    nobs = number of observations
 !    nvars = number of predictor variables
-!    x(nobs, nvars) = matrix of predictors, of dimension N * p;
-!                     each row is an observation vector.
-!    y(nobs) = response variable.
+!    x(nobs, nvars) = matrix of predictors, of dimension N * p; each row is an
+!                     observation vector.
+!    y(nobs) = response variable. This argument should be a two-level
+!              factor {-1, 1} for classification.
 !    jd(jd(1)+1) = predictor variable deletion flag
 !                  jd(1) = 0  => use all variables
 !                  jd(1) != 0 => do not use variables jd(2)...jd(jd(1)+1)
@@ -45,8 +45,8 @@
 !          Note: output solutions always reference original
 !                variables locations and scales.
 !    intr = intercept flag (whether or not to include an intercept in fitting)
-!    maxit = maximum number of outer loops allowed at each lambda value
-!            (suggested values, maxit = 100000)
+!    maxit = maximum number of outer-loop iterations allowed at fixed lambda
+!            value. (suggested values, maxit = 100000)
 !
 ! OUTPUT:
 !
@@ -81,13 +81,13 @@
 !    The HHSVM and Its Generalizations.
 !    Journal of Computational and Graphical Statistics, 22, 396-415.
 
-! ---------------------------------------------------------------------------- !
-SUBROUTINE septhresh(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, nlam,&
+!------------------------------------------------------------------------------!
+SUBROUTINE loglassoNET(lam2, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, nlam,&
      & flmin, ulam, eps, isd, intr, maxit, nalam, b0, beta, ibeta, nbeta, alam,&
-     & npass, jerr, alpha, iglamPos)
-    ! -------------------------------------------------------------------------- !
+     & npass, jerr)
+    !----------------------------------------------------------------------------!
     IMPLICIT NONE
-    ! -------- INPUT VARIABLES -------- !
+    !-------- INPUT VARIABLES --------!
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: dfmax
@@ -103,10 +103,8 @@ SUBROUTINE septhresh(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, 
     INTEGER :: ibeta(pmax)
     INTEGER :: nbeta(nlam)
     DOUBLE PRECISION :: lam2
-    DOUBLE PRECISION :: lamPos
     DOUBLE PRECISION :: flmin
     DOUBLE PRECISION :: eps
-    DOUBLE PRECISION :: alpha
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
     DOUBLE PRECISION :: pf(nvars)
@@ -115,8 +113,7 @@ SUBROUTINE septhresh(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, 
     DOUBLE PRECISION :: beta(pmax, nlam)
     DOUBLE PRECISION :: b0(nlam)
     DOUBLE PRECISION :: alam(nlam)
-    LOGICAL :: iglamPos
-    ! -------- LOCAL DECLARATIONS -------- !
+    !-------- LOCAL DECLARATIONS --------!
     INTEGER :: j
     INTEGER :: l
     INTEGER :: nk
@@ -125,7 +122,7 @@ SUBROUTINE septhresh(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, 
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: xmean
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: xnorm
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: maj
-    ! -------- ALLOCATE VARIABLES -------- !
+    !-------- ALLOCATE VARIABLES --------!
     ALLOCATE (ju(1:nvars), STAT=ierr)
     jerr = jerr + ierr
     ALLOCATE (xmean(1:nvars), STAT=ierr)
@@ -152,9 +149,9 @@ SUBROUTINE septhresh(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, 
     pf = MAX(0.0D0, pf)
     pf2 = MAX(0.0D0, pf2)
     CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
-    CALL septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, dfmax, pmax,&
+    CALL loglassoNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, dfmax, pmax,&
          & nlam, flmin, ulam, eps, maxit, nalam, b0, beta, ibeta, nbeta, alam,&
-         & npass, jerr, intr, alpha, iglamPos)
+         & npass, jerr, intr)
     IF (jerr > 0) RETURN ! CHECK ERROR AFTER CALLING FUNCTION
     ! -------- ORGANIZE BETA AFTERWARDS -------- !
     DO l = 1, nalam
@@ -168,12 +165,12 @@ SUBROUTINE septhresh(lam2, lamPos, nobs, nvars, x, y, jd, pf, pf2, dfmax, pmax, 
     END DO
     DEALLOCATE (ju, xmean, xnorm, maj)
     RETURN
-END SUBROUTINE septhresh
+END SUBROUTINE loglassoNET
 
 ! ---------------------------------------------------------------------------- !
-SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, dfmax,&
-     & pmax, nlam, flmin, ulam, eps, maxit, nalam, b0, beta, m, nbeta, alam,&
-     & npass, jerr, intr, alpha, iglamPos)
+SUBROUTINE loglassoNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, &
+     & dfmax, pmax, nlam, flmin, ulam, eps, maxit, nalam, b0, beta, m, &
+     & nbeta, alam, npass, jerr, intr)
     ! -------------------------------------------------------------------------- !
     IMPLICIT NONE
     ! -------- INPUT VARIABLES -------- !
@@ -195,10 +192,7 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
     INTEGER :: m(pmax)
     INTEGER :: nbeta(nlam)
     DOUBLE PRECISION :: lam2
-    DOUBLE PRECISION :: lamPos
-    DOUBLE PRECISION :: flmin
     DOUBLE PRECISION :: eps
-    DOUBLE PRECISION :: alpha ! If use lamPos, alpha = 0.0D0, else alpha is user specified
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
     DOUBLE PRECISION :: pf(nvars)
@@ -208,17 +202,15 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
     DOUBLE PRECISION :: b0(nlam)
     DOUBLE PRECISION :: alam(nlam)
     DOUBLE PRECISION :: maj(nvars)
-    LOGICAL :: iglamPos
     ! -------- LOCAL DECLARATIONS -------- !
     DOUBLE PRECISION :: d
     DOUBLE PRECISION :: dif
     DOUBLE PRECISION :: oldb
     DOUBLE PRECISION :: u
-    DOUBLE PRECISION :: vpos
+    DOUBLE PRECISION :: v
     DOUBLE PRECISION :: al
     DOUBLE PRECISION :: alf = 1.0D0
-    DOUBLE PRECISION :: altemp(nlam) ! temporarily store lambda values before passing to alam
-    DOUBLE PRECISION :: altemp_use(nlam) ! temporarily store actual lambda values used, in case of alpha input
+    DOUBLE PRECISION :: flmin
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: b
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: oldbeta
     DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: r
@@ -240,7 +232,7 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
     jerr = jerr + ierr
     IF (jerr /= 0) RETURN
     ! -------- INITIALIZATION -------- !
-    r = y
+    r = 0.0D0
     b = 0.0D0
     oldbeta = 0.0D0
     m = 0
@@ -248,54 +240,33 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
     npass = 0
     ni = npass
     mnl = MIN(mnlam, nlam)
-    maj = 2.0D0*maj
+    maj = 0.25D0*maj
     IF (flmin < 1.0D0) THEN
         flmin = MAX(mfl, flmin)
         alf = flmin**(1.0D0/(DBLE(nlam) - 1.0D0))
     END IF
-
-
     ! -------- LAMBDA LOOP -------- !
     DO l = 1, nlam
         ! -------- COMPUTING LAMBDA -------- !
         IF (flmin >= 1.0D0) THEN
             al = ulam(l)
-            IF(iglamPos) THEN
-                altemp(l) = al / 2.0D0
-            ELSE
-                altemp(l) = al
-            END IF
-            altemp_use(l) = al * (1.0D0 - alpha)
         ELSE
             IF (l > 2) THEN
                 al = al*alf
-                altemp(l) = al
-                altemp_use(l) = al * (1.0D0 - alpha)
             ELSE IF (l == 1) THEN
                 al = big
-                altemp(l) = al
-                altemp_use(l) = al
             ELSE IF (l == 2) THEN
                 al = 0.0D0
                 DO j = 1, nvars
                     IF (ju(j) /= 0) THEN
                         IF (pf(j) > 0.0D0) THEN
-                            u = DOT_PRODUCT(r, x(:, j))
-                            al = MAX(al, ABS(u)/pf(j))
+                            al = MAX(al, ABS(DOT_PRODUCT(y/(1.0D0 + EXP(r)), &
+                                 & x(:, j)))/pf(j))
                         END IF
                     END IF
                 END DO
                 al = al*alf/nobs
-                altemp(l) = al
-                altemp_use(l) = al * (1.0D0 - alpha)
             END IF
-        END IF
-    END DO
-
-    DO l = 1, nlam
-        al = altemp_use(l)
-        IF(iglamPos) THEN
-            lamPos = altemp(l) * alpha
         END IF
         ! -------- OUTER LOOP -------- !
         DO
@@ -308,41 +279,35 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
                 DO k = 1, nvars
                     IF (ju(k) /= 0) THEN
                         oldb = b(k)
-                        u = DOT_PRODUCT(r, x(:, k))
+                        u = DOT_PRODUCT(y/(1.0D0 + EXP(r)), x(:, k))
                         u = maj(k)*b(k) + u/nobs
-                        vpos = al*pf(k)
-                        ! v = ABS(u) - v
-                        !  IF (v > 0.0D0) THEN
-                        !     b(k) = SIGN(v, u) / (maj(k) + pf2(k) * lam2)
-                        !  ELSE
-                        !     b(k) = 0.0D0
-                        !  END IF
-                        IF (u > vpos) THEN
-                            b(k) = (u - vpos)/(maj(k) + pf2(k)*lam2)
-                        ELSE IF (u < - lamPos) THEN
-                            b(k) = (u + lamPos)/(maj(k) + pf2(k)*lam2)
+                        v = al*pf(k)
+                        v = ABS(u) - v
+                        IF (v > 0.0D0) THEN
+                            b(k) = SIGN(v, u)/(maj(k) + pf2(k)*lam2)
                         ELSE
                             b(k) = 0.0D0
                         END IF
                         d = b(k) - oldb
                         IF (ABS(d) > 0.0D0) THEN
                             dif = MAX(dif, d**2)
-                            r = r - x(:, k)*d
+                            r = r + y*x(:, k)*d
                             IF (mm(k) == 0) THEN
                                 ni = ni + 1
                                 IF (ni > pmax) EXIT
                                 mm(k) = ni
-                                m(ni) = k !indicate which one is non-zero
+                                m(ni) = k ! INDICATE WHICH ONE IS NON-ZERO
                             END IF
                         END IF
                     END IF
                 END DO
                 IF (ni > pmax) EXIT
                 IF (intr == 1) THEN
-                    d = SUM(r)/nobs
+                    d = sum(y/(1.0D0 + EXP(r)))
+                    d = 4.0D0*d/nobs
                     IF (d /= 0.0D0) THEN
                         b(0) = b(0) + d
-                        r = r - d
+                        r = r + y*d
                         dif = MAX(dif, d**2)
                     END IF
                 END IF
@@ -358,33 +323,27 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
                     DO j = 1, ni
                         k = m(j)
                         oldb = b(k)
-                        u = DOT_PRODUCT(r, x(:, k))
+                        u = DOT_PRODUCT(y/(1.0D0 + EXP(r)), x(:, k))
                         u = maj(k)*b(k) + u/nobs
-                        vpos = al*pf(k)
-                        ! v = ABS(u) - v
-                        ! IF (v > 0.0D0) THEN
-                        !     b(k) = SIGN(v, u)/(maj(k) + pf2(k)*lam2)
-                        ! ELSE
-                        !     b(k) = 0.0D0
-                        ! END IF
-                        IF (u > vpos) THEN
-                            b(k) = (u - vpos)/(maj(k) + pf2(k)*lam2)
-                        ELSE IF (u < - lamPos) THEN
-                            b(k) = (u + lamPos)/(maj(k) + pf2(k)*lam2)
+                        v = al*pf(k)
+                        v = ABS(u) - v
+                        IF (v > 0.0D0) THEN
+                            b(k) = SIGN(v, u)/(maj(k) + pf2(k)*lam2)
                         ELSE
                             b(k) = 0.0D0
                         END IF
                         d = b(k) - oldb
                         IF (ABS(d) > 0.0D0) THEN
                             dif = MAX(dif, d**2)
-                            r = r - x(:, k)*d
+                            r = r + y*x(:, k)*d
                         END IF
                     END DO
                     IF (intr == 1) THEN
-                        d = SUM(r)/nobs
+                        d = SUM(y/(1.0D0 + EXP(r)))
+                        d = 4.0D0*d/nobs
                         IF (d /= 0.0D0) THEN
                             b(0) = b(0) + d
-                            r = r - d
+                            r = r + y*d
                             dif = MAX(dif, d**2)
                         END IF
                     END IF
@@ -415,13 +374,13 @@ SUBROUTINE septhreshNETpath(lam2, lamPos, maj, nobs, nvars, x, y, ju, pf, pf2, d
         IF (ni > 0) beta(1:ni, l) = b(m(1:ni))
         nbeta(l) = ni
         b0(l) = b(0)
-        alam(l) = altemp(l)
+        alam(l) = al
         nalam = l
         IF (l < mnl) CYCLE
         IF (flmin >= 1.0D0) CYCLE
-        me = COUNT(beta(1:ni, l) /= 0.0D0)
+        me = count(beta(1:ni, l) /= 0.0D0)
         IF (me > dfmax) EXIT
     END DO
     DEALLOCATE (b, oldbeta, r, mm)
     RETURN
-END SUBROUTINE septhreshNETpath
+END SUBROUTINE loglassoNETpath

@@ -9,7 +9,7 @@
 ##'   classification.
 ##' @param nlambda the number of \code{lambda} values - default is 100.
 ##' @param method a character string specifying the loss function to use, valid
-##'   options are: \itemize{ \item \code{"ls"} least square loss. \item \code{"suni"}
+##'   options are: \itemize{ \item \code{"ls"} least square loss. \item \code{"suni"} # nolint
 ##'   soft unilasso loss. } Default is \code{"ls"}.
 ##' @param lambda.factor The factor for getting the minimal lambda in
 ##'   \code{lambda} sequence, where \code{min(lambda)} = \code{lambda.factor} *
@@ -237,20 +237,22 @@
 ##' @useDynLib sulnet, .registration = TRUE
 ##'
 sulnet2D <- function(x, y, nlambda = 100,
-                   method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest",
-                              "adasunilambdatest","adasuni2lambdatest",
-                              "septhresh"),
-                   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
-                   lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
-                   pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
-                   pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
-                   intercept = TRUE, eps = 1e-08, maxit = 1e+05, lamPos = 0.1,
-                   loo = TRUE, alpha = seq(0, 0.5, length.out = 11),
-                   asuweight = c("ols", "lasso", "lasso_ols","univar"),
-                   negOnly = FALSE) {
+                    method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest",
+                                "adasunilambdatest", "adasuni2lambdatest",
+                                "septhresh"),
+                    family = c("gaussian", "binomial"),
+                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
+                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
+                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
+                    pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
+                    intercept = TRUE, eps = 1e-08, maxit = 1e+05, lamPos = 0.1,
+                    loo = TRUE, alpha = seq(0, 0.5, length.out = 11),
+                    asuweight = c("ols", "lasso", "lasso_ols","univar"),
+                    negOnly = FALSE) {
   ################################################################################
   ## data setup
   method <- match.arg(method)
+  family <- match.arg(family)
   asuweight <- match.arg(asuweight)
   this.call <- match.call()
   y <- drop(y)
@@ -309,12 +311,19 @@ sulnet2D <- function(x, y, nlambda = 100,
     nlam <- as.integer(length(lambda))
   }
   maxit <- ifelse(grepl("cold", method),as.integer(maxit), as.integer(maxit * nlam))
-  if(grepl("adasuni",method) ){
-    if(lambda2 == 0) lambda2 = 0.1
+  if(grepl("adasuni",method)){
+    if(lambda2 == 0) lambda2 <- 0.1
 
   }
   ################################################################################
-  fit <- switch(method,
+  if(family == "binomial"){
+    fit <- switch(method,
+                  septhresh = logsunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+                                          pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+                                          nobs, nvars, vnames, alpha, ignore_lamPos)
+                  )
+  }else if (family == "gaussian") {
+    fit <- switch(method,
                 suni_2 = sunipath_2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
                                     pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
                                     nobs, nvars, vnames, alpha, ignore_lamPos),
@@ -337,6 +346,8 @@ sulnet2D <- function(x, y, nlambda = 100,
                                           pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
                                           nobs, nvars, vnames, alpha, ignore_lamPos)
                 )
+  }
+  
   if (is.null(lambda))
     fit$lambda <- lamfix(fit$lambda)
   fit$call <- this.call

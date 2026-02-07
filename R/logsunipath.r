@@ -1,49 +1,56 @@
 ##' @import Matrix
 
-adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  missexc, jd, pf,
-                        pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
-                        alpha, ignore_lamPos) {
-  ################################################################################
+logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, pf,
+                       pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
+                       alpha, ignore_lamPos) {
+################################################################################
   ## data setup
-  y <- as.double(y)
+  y <- as.factor(y)
+  y <- c(-1, 1)[as.numeric(y)]
+  if (!all(y %in% c(-1, 1)))
+    stop("y should be a factor with two levels")
   storage.mode(x) <- "double"
   loo <- as.logical(loo)
 
-  ################################################################################
-  ## adaptive lasso for choosing coefficients
-  if(nvars > nobs & asuweight == "ols") asuweight <- "lasso_ols"
-  if(missexc){
-    adapf <- switch(asuweight,
-                    ols = lm.fit(cbind(rep(1,nobs),x),y)$coefficients[-1],
-                    lasso = lasso_w_supp(x,y,jd = jd),
-                    lasso_ols = lasso_ols_supp(x,y),
-                    univar = uniFit(x,y)$beta)
-    adapf <- 1/pmax.int(abs(adapf), 1e-6)
-    adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
-                        pf = adapf, lambda2 = lam2)
-  }else{
-    adapf <- switch(asuweight,
-                    ols = lm.fit(cbind(rep(1,nobs),x[,-jd[-1]]),y)$coefficients[-1],
-                    lasso = lasso_w_supp(x,y,jd = jd),
-                    lasso_ols = lasso_ols_supp(x,y),
-                    univar = uniFit(x,y)$beta)
-    adapf <- 1/pmax.int(abs(adapf), 1e-6)
-    adafit <- cv.sulnet(x, y, method = "ls", standardize = TRUE, intercept = TRUE,
-                        pf = adapf, lambda2 = lam2,
-                        exclude = jd[-1])
-  }
-
-  selected_vars <- which(coef(adafit)[-1] != 0)
-  new_jd <- seq(nvars)[-selected_vars]
-  new_jd <- append(new_jd, length(new_jd), after = 0)
-  new_jd <- as.integer(new_jd)
-
-  ################################################################################
-  ## if only computing the negative steps
-
-  lam2 <- as.double(0)
-
   if(negOnly){
+    while(TRUE){
+      getlambda <- .Fortran("getlambdabinom", nobs, nvars, nlam, ulam = ulam, x,
+                          y, pf, flmin, PACKAGE = "sulnet")
+      ulamtemp <- as.double(getlambda$ulam)
+      if(!anyNA(ulamtemp)){
+        flmin = as.double(1)
+        ulam <- as.double(2*ulamtemp)
+        break
+      }
+    }
+  }else{
+    unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+                       beta0 = double(nvars),
+                       beta  = double(nvars),
+                       fit   = double(nobs * nvars),
+                       PACKAGE = "sulnet")
+    f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+    storage.mode(f) <- "double"
+    while(TRUE){
+      getlambda <- .Fortran("getlambdabinom", nobs, nvars, nlam, ulam = ulam, f,
+                          y, pf, flmin, PACKAGE = "sulnet")
+      ulamtemp <- as.double(getlambda$ulam)
+      if(!anyNA(ulamtemp)){
+        flmin = as.double(1)
+        ulam <- as.double(2 * ulamtemp)
+        break
+      }
+    }
+    # if(flmin<1){
+    #   ulam <- sulnet(f,y,nlambda = nlam, standardize = as.logical(isd),
+    #                  intercept = as.logical(intr))$lambda
+    #   ulam = as.double(ulam)
+    # }
+  }
+  flmin <- as.double(1)
+################################################################################
+
+if(negOnly){
     if(!is.null(alpha)){
       n_alpha = length(alpha)
       b0list = list()
@@ -53,7 +60,7 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
       jerrmat = vector("list", length = n_alpha)
 
       for(a in seq_along(alpha)){
-        fit <- .Fortran("adasuniNET", lam2, lamPos, nobs,nvars, x, as.double(y), new_jd, pf, pf2,
+        fit <- .Fortran("logsuniNET", lam2, lamPos, nobs, nvars, x, as.double(y), jd, pf, pf2,
                         dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                         nalam = integer(1), b0 = double(nlam),
                         beta = double(pmax * nlam), ibeta = integer(pmax),
@@ -62,13 +69,13 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
                         alpha = as.double(alpha[a]), iglamPos = as.logical(ignore_lamPos),
                         PACKAGE = "sulnet")
         outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-        b0list[[paste0("alpha_", alpha[a])]] = outlist$b0
+        b0list[[paste0("alpha_", alpha[a])]] <- outlist$b0
         betamat[[a]] <- outlist$beta
         dfmat[[a]] <- outlist$df
         npassesmat[[a]] <- fit$npass
         jerrmat[[a]] <- fit$jerr
       }
-      alphaname = paste0("alpha_", alpha)
+      alphaname <- paste0("alpha_", alpha)
       names(betamat) <- alphaname
       names(dfmat) <- alphaname
       names(npassesmat) <- alphaname
@@ -88,36 +95,36 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
                       negOnly = negOnly)
 
     }else{
-      n_alpha = length(lamPos)
-      b0list = list()
-      betamat = vector("list", length = n_alpha)
-      dfmat = vector("list", length = n_alpha)
-      npassesmat = vector("list", length = n_alpha)
-      jerrmat = vector("list", length = n_alpha)
+      n_alpha <- length(lamPos)
+      b0list <- list()
+      betamat <- vector("list", length = n_alpha)
+      dfmat <- vector("list", length = n_alpha)
+      npassesmat <- vector("list", length = n_alpha)
+      jerrmat <- vector("list", length = n_alpha)
 
       for(a in seq_along(lamPos)){
-        fit <- .Fortran("adasuniNET", lam2,lamPos[a], nobs, nvars, x, as.double(y), new_jd, pf, pf2,
+        fit <- .Fortran("logsuniNET", lam2,lamPos[a], nobs, nvars, x, as.double(y), jd, pf, pf2,
                         dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                         nalam = integer(1), b0 = double(nlam),
                         beta = double(pmax * nlam), ibeta = integer(pmax),
                         nbeta = integer(nlam), alam = double(nlam),
                         npass = integer(1), jerr = integer(1),
-                        alpha = as.double(0), iglamPos = as.logical(ignore_lamPos),
+                        alpha = as.double(0.5), iglamPos = as.logical(ignore_lamPos),
                         PACKAGE = "sulnet")
         outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-        b0list[[paste0("lamPos_", lamPos[a])]] = outlist$b0
+        b0list[[paste0("lamPos_", lamPos[a])]] <- outlist$b0
         betamat[[a]] <- outlist$beta
         dfmat[[a]] <- outlist$df
         npassesmat[[a]] <- fit$npass
         jerrmat[[a]] <- fit$jerr
       }
-      alphaname = paste0("lamPos_", lamPos)
+      alphaname <- paste0("lamPos_", lamPos)
       names(betamat) <- alphaname
       names(dfmat) <- alphaname
       names(npassesmat) <- alphaname
       names(jerrmat) <- alphaname
-      dim = c(n_alpha, outlist$dim)
-      lambda_total = outlist$lambda
+      dim <- c(n_alpha, outlist$dim)
+      lambda_total <- outlist$lambda
 
       outlist <- list(b0 = b0list,
                       beta = betamat,
@@ -140,30 +147,30 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
   ################################################################################
   ## univariate fit
 
-  unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
-                     beta0 = double(nvars),
-                     beta  = double(nvars),
-                     fit   = double(nobs * nvars),
-                     PACKAGE = "sulnet")
-  f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+  # unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+  #                    beta0 = double(nvars),
+  #                    beta  = double(nvars),
+  #                    fit   = double(nobs * nvars),
+  #                    PACKAGE = "sulnet")
+  # f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
 
 
 
 
   if(!is.null(alpha)){
-    n_alpha = length(alpha)
-    fb0list = list()
-    fbetamat = vector("list", length = n_alpha)
-    dfmat = vector("list", length = n_alpha)
-    npassesmat = vector("list", length = n_alpha)
-    jerrmat = vector("list", length = n_alpha)
+    n_alpha <- length(alpha)
+    fb0list <- list()
+    fbetamat <- vector("list", length = n_alpha)
+    dfmat <- vector("list", length = n_alpha)
+    npassesmat <- vector("list", length = n_alpha)
+    jerrmat <- vector("list", length = n_alpha)
 
-    b0list = list()
-    betamat = vector("list", length = n_alpha)
+    b0list <- list()
+    betamat <- vector("list", length = n_alpha)
 
     for(a in seq_along(alpha)){
-      fit <- .Fortran("adasuniNET", lam2, lamPos, nobs, nvars, f, as.double(y), new_jd, pf, pf2,
-                      dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
+      fit <- .Fortran("logsuniNET", lam2, lamPos, nobs, nvars, f, as.double(y), jd, pf, pf2,
+                      dfmax, pmax, nlam, flmin, ulam = ulam, eps, isd, intr, maxit,
                       nalam = integer(1), b0 = double(nlam),
                       beta = double(pmax * nlam), ibeta = integer(pmax),
                       nbeta = integer(nlam), alam = double(nlam),
@@ -171,14 +178,14 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
                       alpha = as.double(alpha[a]), iglamPos = as.logical(ignore_lamPos),
                       PACKAGE = "sulnet")
       outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-      ones = rep(1,fit$nalam)
+      ones <- rep(1, fit$nalam)
       unibeta <- outer(unifit$beta, ones)
       unibeta0 <- outer(unifit$beta0, ones)
 
-      beta_temp = outlist$beta
-      beta0_temp = outlist$b0
+      beta_temp <- outlist$beta
+      beta0_temp <- outlist$b0
 
-      fb0list[[paste0("alpha_", alpha[a])]] = beta0_temp
+      fb0list[[paste0("alpha_", alpha[a])]] <- beta0_temp
       fbetamat[[a]] <- beta_temp
       dfmat[[a]] <- outlist$df
       npassesmat[[a]] <- fit$npass
@@ -191,17 +198,17 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
       beta_result <- beta_temp
       beta_result@x <- beta_temp@x * unibeta[cbind(row_idx, col_idx)]
 
-      betamat[[a]] = beta_result
-      b0list[[paste0("alpha_", alpha[a])]] = beta0_temp + colSums(unibeta0 * beta_temp)
+      betamat[[a]] <- beta_result
+      b0list[[paste0("alpha_", alpha[a])]] <- beta0_temp + colSums(unibeta0 * beta_temp)
     }
-    alphaname = paste0("alpha_", alpha)
+    alphaname <- paste0("alpha_", alpha)
     names(fbetamat) <- alphaname
     names(betamat) <- alphaname
     names(dfmat) <- alphaname
     names(npassesmat) <- alphaname
     names(jerrmat) <- alphaname
-    dim = c(n_alpha, outlist$dim)
-    lambda_total = outlist$lambda
+    dim <- c(n_alpha, outlist$dim)
+    lambda_total <- outlist$lambda
 
     outlist <- list(b0 = b0list,
                     beta = betamat,
@@ -222,34 +229,34 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
     )
 
   }else{
-    n_alpha = length(lamPos)
-    fb0list = list()
-    fbetamat = vector("list", length = n_alpha)
-    dfmat = vector("list", length = n_alpha)
-    npassesmat = vector("list", length = n_alpha)
-    jerrmat = vector("list", length = n_alpha)
+    n_alpha <- length(lamPos)
+    fb0list <- list()
+    fbetamat <- vector("list", length = n_alpha)
+    dfmat <- vector("list", length = n_alpha)
+    npassesmat <- vector("list", length = n_alpha)
+    jerrmat <- vector("list", length = n_alpha)
 
-    b0list = list()
-    betamat = vector("list", length = n_alpha)
+    b0list <- list()
+    betamat <- vector("list", length = n_alpha)
 
     for(a in seq_along(lamPos)){
-      fit <- .Fortran("adasuniNET", lam2, lamPos[a], nobs, nvars, f, as.double(y), new_jd, pf, pf2,
+      fit <- .Fortran("logsuniNET", lam2, lamPos[a], nobs, nvars, f, as.double(y), jd, pf, pf2,
                       dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
                       nalam = integer(1), b0 = double(nlam),
                       beta = double(pmax * nlam), ibeta = integer(pmax),
                       nbeta = integer(nlam), alam = double(nlam),
                       npass = integer(1), jerr = integer(1),
-                      alpha = as.double(0), iglamPos = as.logical(ignore_lamPos),
+                      alpha = as.double(0.5), iglamPos = as.logical(ignore_lamPos),
                       PACKAGE = "sulnet")
       outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
-      ones = rep(1,fit$nalam)
+      ones <- rep(1, fit$nalam)
       unibeta <- outer(unifit$beta, ones)
       unibeta0 <- outer(unifit$beta0, ones)
 
-      beta_temp = outlist$beta
-      beta0_temp = outlist$b0
+      beta_temp <- outlist$beta
+      beta0_temp <- outlist$b0
 
-      fb0list[[paste0("lamPos_", lamPos[a])]] = beta0_temp
+      fb0list[[paste0("lamPos_", lamPos[a])]] <- beta0_temp
       fbetamat[[a]] <- beta_temp
       dfmat[[a]] <- outlist$df
       npassesmat[[a]] <- fit$npass
@@ -262,17 +269,17 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
       beta_result <- beta_temp
       beta_result@x <- beta_temp@x * unibeta[cbind(row_idx, col_idx)]
 
-      betamat[[a]] = beta_result
-      b0list[[paste0("lamPos_", lamPos[a])]] = beta0_temp + colSums(unibeta0 * beta_temp)
+      betamat[[a]] <- beta_result
+      b0list[[paste0("lamPos_", lamPos[a])]] <- beta0_temp + colSums(unibeta0 * beta_temp)
     }
-    alphaname = paste0("lamPos_", lamPos)
+    alphaname <- paste0("lamPos_", lamPos)
     names(fbetamat) <- alphaname
     names(betamat) <- alphaname
     names(dfmat) <- alphaname
     names(npassesmat) <- alphaname
     names(jerrmat) <- alphaname
-    dim = c(n_alpha, outlist$dim)
-    lambda_total = outlist$lambda
+    dim <- c(n_alpha, outlist$dim)
+    lambda_total <- outlist$lambda
 
     outlist <- list(b0 = b0list,
                     beta = betamat,
@@ -294,8 +301,6 @@ adasunipath2 <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax,  
   }
 
 
-  class(outlist) <- c("sunipath_2")
+  class(outlist) <- c("logsunipath")
   return(outlist)
 }
-
-

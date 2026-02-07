@@ -1,16 +1,13 @@
-##' @importFrom methods rbind2
 ##' @export
-coef.sunipath_2 <- function(object, s = NULL, type = c("coefficients", "nonzero"),
-                            alpha,
-                        ...) {
+coef.logsunipath <- function(object, s = NULL,
+                           type = c("coefficients", "nonzero"),
+                           alpha, ...) {
   type <- match.arg(type)
-
-
   b0 <- lapply(object$b0, function(x){
     b <- t(as.matrix(x))
     rownames(b) <- "(Intercept)"
     b
-    })
+  })
   nbeta <- lapply(seq_along(b0), function(x){
     rbind2(b0[[x]], object$beta[[x]])
   })
@@ -30,9 +27,7 @@ coef.sunipath_2 <- function(object, s = NULL, type = c("coefficients", "nonzero"
       dimnames(x) <- list(vnames, paste(seq(along = s)))
       x
     })
-
   }
-
   if(!missing(alpha)){
     nbeta_2 <- list()
     if(object$use_alpha){
@@ -60,5 +55,4 @@ coef.sunipath_2 <- function(object, s = NULL, type = c("coefficients", "nonzero"
     })
     return(new_nbeta)
   }
-
 }

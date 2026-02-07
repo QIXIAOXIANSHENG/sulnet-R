@@ -42,9 +42,9 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
   ## lambda setup
   if(negOnly){
     while(TRUE){
-      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, x,
+      getlambdagauss <- .Fortran("getlambdagauss", nobs, nvars, nlam, ulam = ulam, x,
                           y, pf, flmin, PACKAGE = "sulnet")
-      ulamtemp <- as.double(getlambda$ulam)
+      ulamtemp <- as.double(getlambdagauss$ulam)
       if(!anyNA(ulamtemp)){
         flmin = as.double(1)
         ulam <- ulamtemp
@@ -65,9 +65,9 @@ adasuni2lambdapath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, p
     f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
     storage.mode(f) <- "double"
     while(TRUE){
-      getlambda <- .Fortran("getlambda", nobs, nvars, nlam, ulam = ulam, f,
+      getlambdagauss <- .Fortran("getlambdagauss", nobs, nvars, nlam, ulam = ulam, f,
                           y, pf, flmin, PACKAGE = "sulnet")
-      ulamtemp <- as.double(getlambda$ulam)
+      ulamtemp <- as.double(getlambdagauss$ulam)
       if(!anyNA(ulamtemp)){
         flmin = as.double(1)
         ulam <- ulamtemp
