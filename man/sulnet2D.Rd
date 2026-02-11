@@ -10,7 +10,7 @@ sulnet2D(
   nlambda = 100,
   method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest", "adasunilambdatest",
     "adasuni2lambdatest", "septhresh"),
-  family = c("gaussian", "binomial"),
+  family = c("gaussian", "binomial", "cox"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
   lambda2 = 0,

@@ -25,6 +25,8 @@ extern void F77_NAME(getlambdagauss)(void *, void *, void *, void *, void *, voi
 extern void F77_NAME(getlambdabinom)(void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(septhresh)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(logsuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(coxnet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(coxsuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_FortranMethodDef FortranEntries[] = {
     {"loofit",        (DL_FUNC) &F77_NAME(loofit),        8},
@@ -41,6 +43,8 @@ static const R_FortranMethodDef FortranEntries[] = {
     {"getlambdabinom",     (DL_FUNC) &F77_NAME(getlambdabinom),     8},
     {"septhresh",     (DL_FUNC) &F77_NAME(septhresh),     28},
     {"logsuninet",    (DL_FUNC) &F77_NAME(logsuninet),    28},
+    {"coxnet",        (DL_FUNC) &F77_NAME(coxnet),    28},
+    {"coxsuninet",    (DL_FUNC) &F77_NAME(coxsuninet),    30},
     {NULL, NULL, 0}
 };
 

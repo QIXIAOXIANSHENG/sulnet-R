@@ -237,18 +237,20 @@
 ##' @useDynLib sulnet, .registration = TRUE
 ##'
 sulnet2D <- function(x, y, nlambda = 100,
-                    method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest",
-                                "adasunilambdatest", "adasuni2lambdatest",
-                                "septhresh"),
-                    family = c("gaussian", "binomial"),
-                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
-                    lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
-                    pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
-                    pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
-                    intercept = TRUE, eps = 1e-08, maxit = 1e+05, lamPos = 0.1,
-                    loo = TRUE, alpha = seq(0, 0.5, length.out = 11),
-                    asuweight = c("ols", "lasso", "lasso_ols","univar"),
-                    negOnly = FALSE) {
+                     method = c(
+                       "suni_2", "adasuni", "adasuni2", "sunilambdatest",
+                       "adasunilambdatest", "adasuni2lambdatest",
+                       "septhresh"
+                     ),
+                     family = c("gaussian", "binomial", "cox"),
+                     lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
+                     lambda = NULL, lambda2 = 0, pf = rep(1, nvars),
+                     pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
+                     pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
+                     intercept = TRUE, eps = 1e-08, maxit = 1e+05, lamPos = 0.1,
+                     loo = TRUE, alpha = seq(0, 0.5, length.out = 11),
+                     asuweight = c("ols", "lasso", "lasso_ols", "univar"),
+                     negOnly = FALSE) {
   ################################################################################
   ## data setup
   method <- match.arg(method)
@@ -261,19 +263,24 @@ sulnet2D <- function(x, y, nlambda = 100,
   nobs <- as.integer(np[1])
   nvars <- as.integer(np[2])
   vnames <- colnames(x)
-  if (is.null(vnames))
+  if (is.null(vnames)) {
     vnames <- paste("V", seq(nvars), sep = "")
-  if (NROW(y) != nobs)
+  }
+  if (NROW(y) != nobs) {
     stop("x and y have different number of observations")
-  if (NCOL(y) > 1L) stop("Multivariate response is not supported now")
+  }
+  if (NCOL(y) > 1L && family != "cox") stop("Multivariate response is not supported now")
   ################################################################################
   ## parameter setup
-  if (length(pf) != nvars)
+  if (length(pf) != nvars) {
     stop("The size of L1 penalty factor must be same as the number of input variables")
-  if (length(pf2) != nvars)
+  }
+  if (length(pf2) != nvars) {
     stop("The size of L2 penalty factor must be same as the number of input variables")
-  if (lambda2 < 0)
+  }
+  if (lambda2 < 0) {
     stop("lambda2 must be non-negative")
+  }
   lam2 <- as.double(lambda2)
   pf <- as.double(pf)
   pf2 <- as.double(pf2)
@@ -283,73 +290,104 @@ sulnet2D <- function(x, y, nlambda = 100,
   dfmax <- as.integer(dfmax)
   pmax <- as.integer(pmax)
   lamPos <- as.double(sort(lamPos))
-  ignore_lamPos = FALSE
-  if(!is.null(alpha)){
+  ignore_lamPos <- FALSE
+  if (!is.null(alpha)) {
     alpha <- as.double(sort(alpha))
-    ignore_lamPos = TRUE
+    ignore_lamPos <- TRUE
   }
   if (!missing(exclude)) {
     jd <- match(exclude, seq(nvars), 0)
-    if (!all(jd > 0))
+    if (!all(jd > 0)) {
       stop("Some excluded variables out of range")
+    }
     jd <- as.integer(c(length(jd), jd))
-  } else jd <- as.integer(0)
+  } else {
+    jd <- as.integer(0)
+  }
   ################################################################################
   ## lambda setup
   nlam <- as.integer(nlambda)
   if (is.null(lambda)) {
-    if (lambda.factor >= 1)
+    if (lambda.factor >= 1) {
       stop("lambda.factor should be less than 1")
+    }
     flmin <- as.double(lambda.factor)
     ulam <- double(nlam)
   } else {
     ## flmin=1 if user define lambda
     flmin <- as.double(1)
-    if (any(lambda < 0))
+    if (any(lambda < 0)) {
       stop("lambdas should be non-negative")
+    }
     ulam <- as.double(rev(sort(lambda)))
     nlam <- as.integer(length(lambda))
   }
-  maxit <- ifelse(grepl("cold", method),as.integer(maxit), as.integer(maxit * nlam))
-  if(grepl("adasuni",method)){
-    if(lambda2 == 0) lambda2 <- 0.1
-
+  maxit <- ifelse(grepl("cold", method), as.integer(maxit), as.integer(maxit * nlam))
+  if (grepl("adasuni", method)) {
+    if (lambda2 == 0) lambda2 <- 0.1
   }
   ################################################################################
-  if(family == "binomial"){
+  if (family == "binomial") {
     fit <- switch(method,
-                  septhresh = logsunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                          pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
-                                          nobs, nvars, vnames, alpha, ignore_lamPos)
-                  )
-  }else if (family == "gaussian") {
+      septhresh = logsunipath(
+        x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos
+      )
+    )
+  } else if (family == "gaussian") {
     fit <- switch(method,
-                suni_2 = sunipath_2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                    pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                    nobs, nvars, vnames, alpha, ignore_lamPos),
-                adasuni = adasunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                      pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                      nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
-                adasuni2 = adasunipath2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
-                sunilambdatest = sunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                                pmax, jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                                nobs, nvars, vnames, alpha, ignore_lamPos),
-                adasunilambdatest = adasunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                                      pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                                      nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
-                adasuni2lambdatest = adasuni2lambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                                       pmax, missexc = missing(exclude), jd, pf, pf2, maxit, lam2,lamPos, loo, negOnly,
-                                                       nobs, nvars, vnames, alpha, ignore_lamPos, asuweight),
-                septhresh = septhreshpath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-                                          pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
-                                          nobs, nvars, vnames, alpha, ignore_lamPos)
-                )
+      suni_2 = sunipath_2(
+        x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos
+      ),
+      adasuni = adasunipath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax,
+        missexc = missing(exclude), jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos, asuweight
+      ),
+      adasuni2 = adasunipath2(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax,
+        missexc = missing(exclude), jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos, asuweight
+      ),
+      sunilambdatest = sunilambdapath(
+        x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos
+      ),
+      adasunilambdatest = adasunilambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax,
+        missexc = missing(exclude), jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos, asuweight
+      ),
+      adasuni2lambdatest = adasuni2lambdapath(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax,
+        missexc = missing(exclude), jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos, asuweight
+      ),
+      septhresh = septhreshpath(
+        x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos
+      )
+    )
+  } else if (family == "cox") {
+    cl <- rbind(-9e30, 9e30)
+    storage.mode(cl) <- "double"
+    if (!inherits(x, "sparseMatrix")) {
+      storage.mode(x) <- "double"
+    }
+    fit <- switch(method,
+      suni_2 = coxnet(x, FALSE, y, rep(1, nobs), NULL, 1, nobs, nvars, jd, pf2, cl, dfmax, as.integer(pmax), nlam, flmin, ulam, eps, isd, vnames, maxit),
+      septhresh = coxsuninet(x, FALSE, y, rep(1, nobs), NULL, 1, nobs, nvars, jd, pf2, dfmax, as.integer(pmax), nlam, flmin, ulam, eps, isd, vnames, maxit, lamPos, alpha, ignore_lamPos, negOnly, loo)
+    )
   }
-  
-  if (is.null(lambda))
+
+  if (is.null(lambda) && family != "cox") {
     fit$lambda <- lamfix(fit$lambda)
+  }
   fit$call <- this.call
   ################################################################################
   class(fit) <- c("sulnet2D", class(fit))

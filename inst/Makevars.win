@@ -1,0 +1,8 @@
+## 让 gfortran 把 .mod 写到当前目录，并从当前目录找 .mod
+PKG_FCFLAGS += -J. -I.
+
+## 明确对象文件链接顺序：coxfunc.o 必须在 coxNET.o 前面
+OBJECTS = adasuniNET.o auxiliary.o coxfunc.o coxNET.o getlambda.o loglassoNET.o logsuniNET.o loofit.o lslassoNET.o septhresh.o soft_unilassoNET.o sunicoldstart.o suniWalpha.o traverse_zigzag.o
+
+$(SHLIB): $(OBJECTS)
+	$(FC) $(SHLIB_LDFLAGS) -o $@ $(OBJECTS) $(FLIBS) $(PKG_LIBS)
