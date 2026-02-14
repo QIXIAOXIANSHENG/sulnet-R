@@ -94,7 +94,7 @@ plot.cv.sulnet2D <- function(x,  ...) {
           mode = 'lines',
           x = log(c(cvobj$cv.min$lambda.min, cvobj$cv.min$lambda.min)),
           y = c(y.min, y.min),
-          z = c(min(cvobj$cvlower), max(cvobj$cvupper)),
+          z = c(min(cvobj$cvlower,na.rm = TRUE), max(cvobj$cvupper,na.rm = TRUE)),
           line = list(color = 'green', width = 6),
           name = "min line"
         )%>%
@@ -103,7 +103,7 @@ plot.cv.sulnet2D <- function(x,  ...) {
           mode = 'lines',
           x = log(c(cvobj$cv.1se$lambda.1se, cvobj$cv.1se$lambda.1se)),
           y = c(y.1se, y.1se),
-          z = c(min(cvobj$cvlower), max(cvobj$cvupper)),
+          z = c(min(cvobj$cvlower,na.rm = TRUE), max(cvobj$cvupper,na.rm = TRUE)),
           line = list(color = 'orange', width = 6),
           name = "1se line"
         ) %>%

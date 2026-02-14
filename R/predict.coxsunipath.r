@@ -1,33 +1,26 @@
 ##' @export
-predict.logsunipath <- function(
+predict.coxsunipath <- function(
     object, newx, s = NULL,
-    type = c("class", "link"),
+    type = c("link", "response"),
     alpha,
     ...) {
     type <- match.arg(type)
-    b0 <- lapply(object$b0, function(x) {
-        b <- t(as.matrix(x))
-        rownames(b) <- "(Intercept)"
-        b
-    })
-    nbeta <- lapply(seq_along(b0), function(x) {
-        rbind2(b0[[x]], object$beta[[x]])
-    })
-    names(nbeta) <- names(b0)
+    nbeta <- object$beta
+    name <- names(nbeta)
     if (!is.null(s)) {
-        lambda <- object$lambda
-        lamlist <- lambda.interp(lambda, s)
+        nbeta <- lapply(seq_along(nbeta), function(x) {
+            lambda <- object$lambdamat[[x]]
+            lamlist <- lambda.interp(lambda, s)
+            xuse <- nbeta[[x]]
+            vnames <- dimnames(xuse)[[1]]
+            dimnames(xuse) <- list(NULL, NULL)
 
-        nbeta <- lapply(nbeta, function(x) {
-            vnames <- dimnames(x)[[1]]
-            dimnames(x) <- list(NULL, NULL)
-
-            x <- x[, lamlist$left, drop = FALSE] %*%
+            xuse <- xuse[, lamlist$left, drop = FALSE] %*%
                 Diagonal(x = lamlist$frac) +
-                x[, lamlist$right, drop = FALSE] %*%
+                xuse[, lamlist$right, drop = FALSE] %*%
                 Diagonal(x = 1 - lamlist$frac)
-            dimnames(x) <- list(vnames, paste(seq(along = s)))
-            x
+            dimnames(xuse) <- list(vnames, paste(seq(along = s)))
+            xuse
         })
     }
 
@@ -52,17 +45,16 @@ predict.logsunipath <- function(
     }
 
 
-    nnewx <- as.matrix(cbind2(1, newx))
     nfit <- lapply(seq_along(nbeta), function(x) {
-        as.matrix(nnewx %*% nbeta[[x]])
+        as.matrix(newx %*% nbeta[[x]])
     })
 
     nfit <- lapply(nfit, function(x) {
         switch(type,
             link = x,
-            class = ifelse(x > 0, 1, -1)
+            response = exp(x)
         )
     })
-    names(nfit) <- names(nbeta)
+    names(nfit) <- name
     nfit
 }

@@ -1,4 +1,4 @@
-SUBROUTINE getlambdagauss(nobs, nvars, nlam, ulam, x, y, pf, flmin)
+SUBROUTINE getlambdagauss(nobs, nvars, nlam, ulam, x, y, vp, flmin)
     IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: big = 9.9E30
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
@@ -6,15 +6,14 @@ SUBROUTINE getlambdagauss(nobs, nvars, nlam, ulam, x, y, pf, flmin)
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nlam
-    
 
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
     DOUBLE PRECISION :: ulam(nlam)
     DOUBLE PRECISION :: flmin
-    DOUBLE PRECISION :: pf(nvars)
+    DOUBLE PRECISION :: vp(nvars)
 
-    INTEGER :: l,j
+    INTEGER :: l, j
     INTEGER :: ierr
     INTEGER :: isd
     INTEGER :: intr
@@ -61,20 +60,20 @@ SUBROUTINE getlambdagauss(nobs, nvars, nlam, ulam, x, y, pf, flmin)
                 al = 0.0D0
                 DO j = 1, nvars
                     IF (ju(j) /= 0) THEN
-                        IF (pf(j) > 0.0D0) THEN
+                        IF (vp(j) > 0.0D0) THEN
                             u = DOT_PRODUCT(y, x(:, j))
                             ! CALL DBLEPR("x", -1, x(1:14,j), 14)
                             ! CALL INTPR("j", -1, j, 1)
                             ! RETURN
                             ! CALL DBLEPR("u", -1, u, 1)
-                            al = MAX(al, ABS(u)/pf(j))
+                            al = MAX(al, ABS(u)/vp(j))
                             ! CALL DBLEPR("al", -1, al, 1)
                         END IF
                     END IF
                 END DO
                 al = al*alf/nobs
                 altemp(l) = al
-                
+
             END IF
         END IF
     END DO
@@ -82,14 +81,13 @@ SUBROUTINE getlambdagauss(nobs, nvars, nlam, ulam, x, y, pf, flmin)
     IF (flmin < 1.0D0) THEN
         ulam = altemp
         altemp = LOG(altemp)
-        ulam(1) = EXP(2 * altemp(2) - altemp(3))
+        ulam(1) = EXP(2*altemp(2) - altemp(3))
         ! ulam(1) = 100.0D0
     END IF
     DEALLOCATE (maj)
 END SUBROUTINE getlambdagauss
 
-
-SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, pf, flmin)
+SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, vp, flmin)
     IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: big = 9.9E30
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
@@ -97,15 +95,14 @@ SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, pf, flmin)
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nlam
-    
 
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
     DOUBLE PRECISION :: ulam(nlam)
     DOUBLE PRECISION :: flmin
-    DOUBLE PRECISION :: pf(nvars)
+    DOUBLE PRECISION :: vp(nvars)
 
-    INTEGER :: l,j
+    INTEGER :: l, j
     INTEGER :: ierr
     INTEGER :: isd
     INTEGER :: intr
@@ -151,15 +148,15 @@ SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, pf, flmin)
                 al = 0.0D0
                 DO j = 1, nvars
                     IF (ju(j) /= 0) THEN
-                        IF (pf(j) > 0.0D0) THEN
-                            al = MAX(al, ABS(DOT_PRODUCT(y * 0.5D0, &
-                                 & x(:, j)))/pf(j))
+                        IF (vp(j) > 0.0D0) THEN
+                            al = MAX(al, ABS(DOT_PRODUCT(y*0.5D0, &
+                                 & x(:, j)))/vp(j))
                         END IF
                     END IF
                 END DO
                 al = al*alf/nobs
                 altemp(l) = al
-                
+
             END IF
         END IF
     END DO
@@ -167,8 +164,9 @@ SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, pf, flmin)
     IF (flmin < 1.0D0) THEN
         ulam = altemp
         altemp = LOG(altemp)
-        ulam(1) = EXP(2 * altemp(2) - altemp(3))
+        ulam(1) = EXP(2*altemp(2) - altemp(3))
         ! ulam(1) = 100.0D0
     END IF
     DEALLOCATE (maj)
 END SUBROUTINE getlambdabinom
+

@@ -1,11 +1,11 @@
 Package: sulnet
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.2.3
+Version: 0.2.4
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Zhihan", "Chen",
+      email = "zhihan-chen@uiowa.edu",
       role = c("aut", "cre")
     )
   )
@@ -19,5 +19,4 @@ Imports:
     plotly,
     Matrix,
     stats,
-    Surv,
     survival

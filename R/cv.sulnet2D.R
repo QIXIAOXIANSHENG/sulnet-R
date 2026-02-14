@@ -85,7 +85,7 @@
 
 ##'
 ##' @export
-cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0, 0.5, length.out = 11),
+cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0.01, 0.99, length.out = 21),
                       pred.loss = c("misclass", "loss"),
                       nfolds = 5, foldid, ...) {
   if (missing(pred.loss))
@@ -130,7 +130,7 @@ cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0, 0.5, length.out = 11
   ## What to do depends on the pred.loss and the model fit
   fun <- paste("cv", class(sulnet2D.object)[[2]], sep = ".")
   cvstuff <- do.call(fun, list(outlist, lambda, alpha, x, y, foldid,
-                               pred.loss))
+                               pred.loss, sulnet2D.object))
   cvm <- cvstuff$cvm
   cvsd <- cvstuff$cvsd
   cvname <- cvstuff$name
@@ -149,4 +149,6 @@ cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0, 0.5, length.out = 11
   obj <- c(out, as.list(lamin))
   class(obj) <- "cv.sulnet2D"
   obj
+  # cvstuff
+  # out
 }

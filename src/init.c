@@ -27,6 +27,8 @@ extern void F77_NAME(septhresh)(void *, void *, void *, void *, void *, void *, 
 extern void F77_NAME(logsuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(coxnet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(coxsuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(loglike)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+
 
 static const R_FortranMethodDef FortranEntries[] = {
     {"loofit",        (DL_FUNC) &F77_NAME(loofit),        8},
@@ -45,6 +47,7 @@ static const R_FortranMethodDef FortranEntries[] = {
     {"logsuninet",    (DL_FUNC) &F77_NAME(logsuninet),    28},
     {"coxnet",        (DL_FUNC) &F77_NAME(coxnet),    28},
     {"coxsuninet",    (DL_FUNC) &F77_NAME(coxsuninet),    30},
+    {"loglike",       (DL_FUNC) &F77_NAME(loglike),       11},
     {NULL, NULL, 0}
 };
 

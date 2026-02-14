@@ -23,8 +23,12 @@ X <- model.matrix(~ age + sex + ph.ecog + wt.loss, data = df2)[, -1, drop = FALS
 
 # 5) 交叉验证选择 lambda（默认 10-fold）
 set.seed(123)
-sunifit = sulnet2D(X,y,method = "septhresh", family = "cox",eps = 1e-07, maxit = 1000000,alpha = NULL,nlambda = 100)
+sunifit = sulnet2D(X,y,method = "septhresh", family = "cox",eps = 1e-07, maxit = 1000000,alpha = seq(0.01,0.99,length.out = 21))
 coxfit = sulnet2D(X,y,method = "suni_2", family = "cox",eps = 1e-07, maxit = 1000000)
 sunifit$beta
 
-test = sulnet2D(X,y[,1],method = "septhresh")
+test = cv.sulnet2D(X,y[,1],method = "septhresh")
+test = cv.sulnet(X,y[,1])
+logtest = sulnet2D(X,ifelse(y[,1] > 70, 1,0),method = "septhresh",family = "binomial")
+coxtest = cv.sulnet2D(X,y,method = "septhresh", family = "cox",eps = 1e-07, maxit = 1000000,alpha = seq(0.01,0.99,length.out = 21))
+

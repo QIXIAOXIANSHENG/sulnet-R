@@ -14,7 +14,7 @@ cv.sulnet2D(
   x,
   y,
   lambda = NULL,
-  alpha = seq(0, 0.5, length.out = 11),
+  alpha = seq(0.01, 0.99, length.out = 21),
   pred.loss = c("misclass", "loss"),
   nfolds = 5,
   foldid,

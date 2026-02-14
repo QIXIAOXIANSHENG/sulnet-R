@@ -130,11 +130,11 @@ getmin <- function(lambda, cvm, cvsd) {
 }
 
 getmin2D <- function(lambda, alpha, cvm, cvsd, use_alpha) {
-  cvmin <- min(cvm)
+  cvmin <- min(cvm, na.rm = TRUE)
   idmin <- which(cvm <= cvmin, arr.ind = TRUE)
 
   # first pick alpha/lamPos such that it reaches maximum (preserve most sign consistency)
-  alpha.id <- which(max(alpha[idmin[,1]]) == alpha[idmin[,1]])
+  alpha.id <- which(max(alpha[idmin[,1]], na.rm = TRUE) == alpha[idmin[,1]])
   lambda.id <- which.max(lambda[idmin[alpha.id,2]])
   lambda.min <- max(lambda[idmin[alpha.id,2]])
   alpha.min <- alpha[idmin[alpha.id[lambda.id],1]]
@@ -240,6 +240,16 @@ lambda.interp <- function(lambda, s) {
   list(left = left, right = right, frac = sfrac)
 }
 
+lamextend <- function(lambda, flmin, nlam, ulam){
+  if(flmin >= 1){
+    ulam
+  }else{
+    lamstart <- log(lambda[1])
+    lamend <- lamstart + log(flmin)
+    lambda <- exp(seq(lamstart, lamend, length.out = nlam))
+    lambda
+  }
+}
 
 lamfix <- function(lam) {
   llam <- log(lam)
