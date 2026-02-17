@@ -26,7 +26,15 @@ cv.logsunipath <- function(outlist, lambda, alpha, x, y, foldid, pred.loss, delt
         preds <- predict(fitobj, x[which, , drop = FALSE], type = "link")
         nlami <- length(outlist[[i]]$lambda)
         for(a in seq_along(predmatlist)){
-            predmatlist[[a]][which, seq(nlami)] <- preds[[a]]
+            predtemp <- preds[[a]]
+            lpredtemp <- dim(predtemp)[2]
+            if(lpredtemp == nlami){
+                predmatlist[[a]][which, seq(nlami)] <- predtemp
+            }else{
+                predtemp <- cbind(predtemp, matrix(rep(predtemp[,lpredtemp],nlami - lpredtemp),ncol = nlami - lpredtemp))
+                predmatlist[[a]][which, seq(nlami)] <- predtemp
+            }
+            
         }
         nlams[i] <- nlami
     }

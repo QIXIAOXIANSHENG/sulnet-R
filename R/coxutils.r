@@ -1,4 +1,4 @@
-##' @export
+
 buildPredmat <-
     function(outlist, lambda, x, offset, foldid,  y, weights, grouped, type.measure = "deviance", ...) {
         nfolds <- max(foldid)
