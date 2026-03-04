@@ -44,17 +44,18 @@ Currently this function can accommodate "gaussian", "binomial", and "Cox" famili
 \examples{
 # Gaussian model
 set.seed(1)
-sigma=3
-n <- 100; p <- 20
+sigma <- 3
+n <- 100
+p <- 20
 x <- matrix(rnorm(n * p), n, p)
 beta <- matrix(c(rep(2, 5), rep(0, 15)), ncol = 1)
-y <- x \%*\% beta + rnorm(n)*sigma
+y <- x \%*\% beta + rnorm(n) * sigma
 
 
-info = uniInfo(x,y)
+info <- uniInfo(x, y)
 names(info)
 
-yb = as.numeric(y>0)
-info = uniInfo(x,yb, family = "binomial", loo = TRUE)
+yb <- as.numeric(y > 0)
+info <- uniInfo(x, yb, family = "binomial", loo = TRUE)
 names(info)
 }
