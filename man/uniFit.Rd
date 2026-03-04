@@ -4,7 +4,7 @@
 \alias{uniFit}
 \title{Fitting univariate response}
 \usage{
-uniFit(x, y, loo = TRUE)
+uniFit(x, y, loo = TRUE, family = c("gaussian", "binomial"))
 }
 \arguments{
 \item{x}{Input X matrix of dimension nxp}

@@ -24,12 +24,15 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
       }
     }
   }else{
-    unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
-                       beta0 = double(nvars),
-                       beta  = double(nvars),
-                       fit   = double(nobs * nvars),
-                       PACKAGE = "sulnet")
-    f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+    # unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+    #                    beta0 = double(nvars),
+    #                    beta  = double(nvars),
+    #                    fit   = double(nobs * nvars),
+    #                    PACKAGE = "sulnet")
+    # f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+    unifit <- uniInfo(x, y, family = "binomial", loo = TRUE)
+    f <- unifit$F
+    
     storage.mode(f) <- "double"
     while(TRUE){
       getlambda <- .Fortran("getlambdabinom", nobs, nvars, nlam, ulam = ulam, f,

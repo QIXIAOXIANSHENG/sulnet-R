@@ -175,13 +175,17 @@ coxsuninet <- function(x, is.sparse, y, weights, offset, parm, nobs, nvars, jd, 
 
 
 
-  unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+  unifit <- .Fortran("loofit", nobs, nvars, x, ty, loo,
     beta0 = double(nvars),
     beta = double(nvars),
     fit = double(nobs * nvars),
     PACKAGE = "sulnet"
   )
   f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+  # unifit <- uniInfo(x,y,"cox",loo = TRUE)
+  # f <- unifit$F
+  f[which(f == Inf)] <- 9e10
+  f[which(f == -Inf)] <- -9e10
   storage.mode(f) <- "double"
 
   if (iglamPos) {
@@ -199,7 +203,7 @@ coxsuninet <- function(x, is.sparse, y, weights, offset, parm, nobs, nvars, jd, 
 
     for (a in seq_along(alpha)) {
       fit <- if (is.sparse) {
-        stop("Cox model mot implemented for sparse x in glmnet", call. = FALSE)
+        stop("Cox model mot implemented for sparse x in sulnet", call. = FALSE)
       } else {
         .Fortran("coxsuninet",
           parm = parm, nobs, nvars, f, ty, tevent, offset, weights, jd, vp, ne, nx, nlam, flmin, ulam, thresh,

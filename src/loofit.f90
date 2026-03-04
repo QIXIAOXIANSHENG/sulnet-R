@@ -397,3 +397,187 @@ SUBROUTINE loofit_st(nobs0, nvars, nobsA, x0, y0, xA, yA, beta0, beta, fit)
     fit = beta0_mat + x0 * beta_mat
 
 END SUBROUTINE loofit_st
+
+
+SUBROUTINE loofit_binom(nobs, nvars, x, y, loo, beta0, beta, fit)
+    ! -----------------------------------------------------------------------
+    USE, INTRINSIC :: ieee_arithmetic
+    IMPLICIT NONE
+    ! -------- INPUT VARIABLES -------- !
+    INTEGER :: nobs
+    INTEGER :: nvars
+    DOUBLE PRECISION :: x(nobs, nvars)
+    DOUBLE PRECISION :: y(nobs)
+    LOGICAL, INTENT(IN) :: loo
+    ! -------- OUTPUT VARIABLES -------- !
+    DOUBLE PRECISION :: beta0(nvars)
+    DOUBLE PRECISION :: beta(nvars)
+    DOUBLE PRECISION :: fit(nobs, nvars)
+    ! -------- LOCAL DECLARATIONS -------- !
+    INTEGER :: j
+    INTEGER :: i
+    INTEGER :: iter
+    INTEGER :: niter
+    INTEGER :: ju(nvars)
+    DOUBLE PRECISION :: mus(nobs)
+    DOUBLE PRECISION :: musmat(nobs, nvars)
+    DOUBLE PRECISION :: etas(nobs)
+    DOUBLE PRECISION :: w(nobs)
+    DOUBLE PRECISION :: wmat(nobs, nvars)
+    DOUBLE PRECISION :: wmatkeep(nobs, nvars)
+    DOUBLE PRECISION :: wxx(nobs, nvars)
+    DOUBLE PRECISION :: sws(nobs, nvars)
+    DOUBLE PRECISION :: swxx(nobs, nvars)
+    DOUBLE PRECISION :: ztemp(nobs)
+    DOUBLE PRECISION :: beta0_temp
+    DOUBLE PRECISION :: beta_temp
+    DOUBLE PRECISION :: Ri(nobs, nvars)
+    DOUBLE PRECISION :: x_new(nobs, nvars)
+    DOUBLE PRECISION :: xm(nobs, nvars)
+    DOUBLE PRECISION :: xxp(nvars)
+    DOUBLE PRECISION :: maj(nvars)
+    DOUBLE PRECISION :: xnorm(nvars)
+    DOUBLE PRECISION :: xmean(nvars)
+    DOUBLE PRECISION :: Z(nobs, nvars)
+    DOUBLE PRECISION :: XY(nobs, nvars)
+    DOUBLE PRECISION :: beta0_mat(nobs, nvars)
+    DOUBLE PRECISION :: beta_mat(nobs, nvars)
+
+    call chkvars(nobs, nvars, x, ju)
+    
+
+    ! -------- DEFINE VARIABLES -------- !
+    niter = 2
+    mus = (y + 0.5D0) / 2.0D0
+    w = mus * (1.0D0 - mus)
+    etas = LOG(mus / (1.0D0 - mus))
+    ztemp = etas + (y - mus) / w
+    DO j = 1, nvars
+        Z(:, j) = ztemp
+        wmatkeep(:, j) = w
+    END DO
+    wmat = wmatkeep / DBLE(nobs)
+    x_new = x * wmat
+
+    ! --------- START OF WLSU ---------- !
+    ! CALL standard(nobs, nvars, x_new, ju, 0, 0, xmean, xnorm, maj)
+    Do j = 1, nvars
+        xmean(j) = SUM(x_new(:, j)) / SUM(wmat(:, 1))
+    END DO
+    DO j = 1, nobs
+        xm(j, :) = x(j, :) - xmean
+    END DO
+    XY = xm * wmat * Z
+    DO j = 1, nvars
+        xxp(j) = SUM(wmat(:, j) * xm(:, j) * xm(:, j))
+    END DO
+    ! -------- COMPUTE BETA 1st -------- !
+    DO j = 1, nvars
+        IF (ju(j) == 1) THEN
+
+            beta_temp = SUM(XY(:, j))/xxp(j)
+            beta0_temp = SUM(wmat(:, j) * Z(:, j)) / SUM(w) / DBLE(nobs)
+
+            beta_mat(:, j) = beta_temp
+            beta0_mat(:, j) = beta0_temp
+            beta0(j) = beta0_temp
+            beta(j) = beta_temp
+        ELSE
+            beta_mat(:, j) =0.0D0
+            beta0_mat(:, j) = 0.0D0
+            beta(j) = 0.0D0
+            beta0(j) = 0.0D0
+        END IF
+    END DO
+
+    beta0 = beta0 - beta*xmean
+    beta = beta
+    
+    fit = beta0_mat + xm * beta_mat
+
+    ! -------- END OF WLSU --------!
+
+    ! -------- COMPUTE BETA 2nd -------- !
+    DO iter = 1, niter
+        musmat = 1.0D0 / (1.0D0 + EXP(-fit))
+        wmat = musmat * (1.0D0 - musmat)
+        DO j = 1, nvars
+            Z(:, j) = fit(:, j) + (y - musmat(:, j)) / wmat(:, j)
+        END DO
+        wmat = wmat / DBLE(nobs)
+        x_new = x * wmat
+        ! CALL standard(nobs, nvars, x_new, ju, 0, 1, xmean, xnorm, maj)
+        Do j = 1, nvars
+            xmean(j) = SUM(x_new(:, j)) / SUM(wmat(:, 1))
+        END DO
+        DO j = 1, nobs
+            xm(j, :) = x(j, :) - xmean
+        END DO
+        XY = xm * wmat * Z
+        DO j = 1, nvars
+            xxp(j) = SUM(wmat(:, j) * xm(:, j) * xm(:, j))
+        END DO
+        ! -------- COMPUTE BETA 1st -------- !
+        DO j = 1, nvars
+            IF (ju(j) == 1) THEN
+
+                beta_temp = SUM(XY(:, j))/xxp(j)
+                beta0_temp = SUM(wmat(:, j) * Z(:, j)) / SUM(w) / DBLE(nobs)
+
+                beta_mat(:, j) = beta_temp
+                beta0_mat(:, j) = beta0_temp
+                beta0(j) = beta0_temp
+                beta(j) = beta_temp
+            ELSE
+                beta_mat(:, j) =0.0D0
+                beta0_mat(:, j) = 0.0D0
+                beta(j) = 0.0D0
+                beta0(j) = 0.0D0
+            END IF
+        END DO
+
+        beta0 = beta0 - beta*xmean
+        beta = beta
+        
+        fit = beta0_mat + xm * beta_mat
+    END DO
+
+
+    ! -------- LEAVE-ONE-OUT FITTING -------- !
+    IF (loo) THEN
+        wmat = wmatkeep / DBLE(nobs)
+        DO j = 1, nvars
+            wxx(:, j) = wmat(:, j) * xm(:, j) * xm(:, j)
+            ! xxp(j) = SUM(wxx(:, j)) = swxx
+            sws(:, j) = SUM(wmat(:, j))
+            swxx(:, j) = SUM(wxx(:, j))
+        END DO
+        
+        Ri = wmat / sws + wxx / swxx
+
+        Ri = (fit - Ri * Z) / (1.0D0 - Ri)
+        DO j = 1, nvars
+            DO i = 1, nobs
+                IF (ieee_is_nan(Ri(i,j))) THEN
+                    Ri(i,j) = fit(i,j)
+                END IF
+            END DO
+        END DO
+        fit = Ri
+    END IF
+
+END SUBROUTINE loofit_binom
+
+! SUBROUTINE wlsu(nobs, nvars, x, wmat, y, beta0, beta, fit, xmean)
+!     IMPLICIT NONE
+!     ! -------- INPUT VARIABLES -------- !
+!     INTEGER :: nobs
+!     INTEGER :: nvars
+!     DOUBLE PRECISION :: x(nobs, nvars)
+!     DOUBLE PRECISION :: y(nobs)
+!     DOUBLE PRECISION :: xmean(nvars)
+!     DOUBLE PRECISION :: beta0(nvars)
+!     DOUBLE PRECISION :: beta(nvars)
+!     DOUBLE PRECISION :: fit(nobs, nvars)
+!     DOUBLE PRECISION :: wmat(nobs, nvars)
+
