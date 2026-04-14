@@ -1,65 +1,25 @@
 ##' @import Matrix
+##' @importFrom ridge linearRidge
 
-logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, pf,
-                        pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
-                        alpha, ignore_lamPos) {
+cgseppath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, pf, # nolint
+                          pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
+                          alpha, ignore_lamPos) {
   ################################################################################
   ## data setup
-  y <- as.factor(y)
-  y <- c(-1, 1)[as.numeric(y)]
-  if (!all(y %in% c(-1, 1))) {
-    stop("y should be a factor with two levels")
-  }
+  y <- as.double(y)
   storage.mode(x) <- "double"
   loo <- as.logical(loo)
 
-  if (negOnly) {
-    while (TRUE) {
-      getlambda <- .Fortran("getlambdabinom", nobs, nvars, nlam,
-        ulam = ulam, x,
-        y, pf, flmin, PACKAGE = "sulnet"
-      )
-      ulamtemp <- as.double(getlambda$ulam)
-      if (!anyNA(ulamtemp)) {
-        flmin <- as.double(1)
-        ulam <- as.double(2 * ulamtemp)
-        break
-      }
-    }
-  } else {
-    # unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
-    #                    beta0 = double(nvars),
-    #                    beta  = double(nvars),
-    #                    fit   = double(nobs * nvars),
-    #                    PACKAGE = "sulnet")
-    # f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
-    unifit <- uniInfo(x, y, family = "binomial", loo = loo)
-    f <- unifit$F
-    f[which(abs(f) == Inf)] <- max(f[which(abs(f) != Inf)]) * sign(f[which(abs(f) == Inf)]) * 10
-
-    storage.mode(f) <- "double"
-    while (TRUE) {
-      getlambda <- .Fortran("getlambdabinom", nobs, nvars, nlam,
-        ulam = ulam, f,
-        y, pf, flmin, PACKAGE = "sulnet"
-      )
-      ulamtemp <- as.double(getlambda$ulam)
-      if (!anyNA(ulamtemp)) {
-        flmin <- as.double(1)
-        ulam <- as.double(2 * ulamtemp)
-        break
-      }
-    }
-    # if(flmin<1){
-    #   ulam <- sulnet(f,y,nlambda = nlam, standardize = as.logical(isd),
-    #                  intercept = as.logical(intr))$lambda
-    #   ulam = as.double(ulam)
-    # }
-  }
+  ulam <- as.double(getlambdaR(nobs, nvars, nlam, ulam = ulam, x, y, pf, flmin, loo, "gaussian", negOnly, ignore_lamPos))
   flmin <- as.double(1)
   ################################################################################
+  ## if only computing the negative steps
 
   if (negOnly) {
+    corval <- abs(cor(x))
+    ridgefit <- abs(stats::coef(linearRidge(y~x))[-1])
+    cgwt <- ridgefit / (colSums(diag(ridgefit) %*% corval) - diag(corval) * ridgefit)
+    cgwt <- as.double(cgwt)
     if (!is.null(alpha)) {
       n_alpha <- length(alpha)
       b0list <- list()
@@ -69,13 +29,14 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
       jerrmat <- vector("list", length = n_alpha)
 
       for (a in seq_along(alpha)) {
-        fit <- .Fortran("logsuniNET", lam2, lamPos, nobs, nvars, x, as.double(y), jd, pf, pf2,
+        fit <- .Fortran("cgsep", lam2, lamPos, nobs, nvars, x, as.double(y), jd, pf, pf2,
           dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
           nalam = integer(1), b0 = double(nlam),
           beta = double(pmax * nlam), ibeta = integer(pmax),
           nbeta = integer(nlam), alam = double(nlam),
           npass = integer(1), jerr = integer(1),
           alpha = as.double(alpha[a]), iglamPos = as.logical(ignore_lamPos),
+          cgwt,
           PACKAGE = "sulnet"
         )
         outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
@@ -114,13 +75,14 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
       jerrmat <- vector("list", length = n_alpha)
 
       for (a in seq_along(lamPos)) {
-        fit <- .Fortran("logsuniNET", lam2, lamPos[a], nobs, nvars, x, as.double(y), jd, pf, pf2,
+        fit <- .Fortran("cgsep", lam2, lamPos[a], nobs, nvars, x, as.double(y), jd, pf, pf2,
           dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
           nalam = integer(1), b0 = double(nlam),
           beta = double(pmax * nlam), ibeta = integer(pmax),
           nbeta = integer(nlam), alam = double(nlam),
           npass = integer(1), jerr = integer(1),
           alpha = as.double(0.5), iglamPos = as.logical(ignore_lamPos),
+          cgwt,
           PACKAGE = "sulnet"
         )
         outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
@@ -160,12 +122,19 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
   ################################################################################
   ## univariate fit
 
-  # unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
-  #                    beta0 = double(nvars),
-  #                    beta  = double(nvars),
-  #                    fit   = double(nobs * nvars),
-  #                    PACKAGE = "sulnet")
-  # f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+  unifit <- .Fortran("loofit", nobs, nvars, x, y, loo,
+    beta0 = double(nvars),
+    beta = double(nvars),
+    fit = double(nobs * nvars),
+    PACKAGE = "sulnet"
+  )
+  f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
+  storage.mode(f) <- "double"
+  corval <- abs(cor(f))
+  ridgefit <- abs(stats::coef(linearRidge(y~f))[-1])
+  cgwt <- ridgefit / (colSums(diag(ridgefit) %*% corval) - diag(corval) * ridgefit)
+  cgwt <- as.double(cgwt)
+
 
 
   if (!is.null(alpha)) {
@@ -180,7 +149,7 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
     betamat <- vector("list", length = n_alpha)
 
     for (a in seq_along(alpha)) {
-      fit <- .Fortran("logsuniNET", lam2, lamPos, nobs, nvars, f, as.double(y), jd, pf, pf2,
+      fit <- .Fortran("cgsep", lam2, lamPos, nobs, nvars, f, as.double(y), jd, pf, pf2,
         dfmax, pmax, nlam, flmin,
         ulam = ulam, eps, isd, intr, maxit,
         nalam = integer(1), b0 = double(nlam),
@@ -188,6 +157,7 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
         nbeta = integer(nlam), alam = double(nlam),
         npass = integer(1), jerr = integer(1),
         alpha = as.double(alpha[a]), iglamPos = as.logical(ignore_lamPos),
+        cgwt,
         PACKAGE = "sulnet"
       )
       outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
@@ -255,13 +225,14 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
     betamat <- vector("list", length = n_alpha)
 
     for (a in seq_along(lamPos)) {
-      fit <- .Fortran("logsuniNET", lam2, lamPos[a], nobs, nvars, f, as.double(y), jd, pf, pf2,
+      fit <- .Fortran("cgsep", lam2, lamPos[a], nobs, nvars, f, as.double(y), jd, pf, pf2,
         dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
         nalam = integer(1), b0 = double(nlam),
         beta = double(pmax * nlam), ibeta = integer(pmax),
         nbeta = integer(nlam), alam = double(nlam),
         npass = integer(1), jerr = integer(1),
         alpha = as.double(0.5), iglamPos = as.logical(ignore_lamPos),
+        cgwt,
         PACKAGE = "sulnet"
       )
       outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
@@ -320,6 +291,43 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
   }
 
 
-  class(outlist) <- c("logsunipath")
+  class(outlist) <- c("sunipath_2")
   return(outlist)
+
+
+  # ################################################################################
+  # ## call Fortran core
+  # fit <- .Fortran("soft_unilassoNET", lam2,lamPos, nobs, nvars, f, as.double(y), jd, pf, pf2,
+  #                 dfmax, pmax, nlam, flmin, ulam, eps, isd, intr, maxit,
+  #                 nalam = integer(1), b0 = double(nlam),
+  #                 beta = double(pmax * nlam), ibeta = integer(pmax),
+  #                 nbeta = integer(nlam), alam = double(nlam),
+  #                 npass = integer(1), jerr = integer(1), PACKAGE = "sulnet")
+  # ################################################################################
+  # ## output
+  # outlist <- getoutput(fit, maxit, pmax, nvars, vnames)
+  # outlist <- c(outlist, list(npasses = fit$npass, jerr = fit$jerr,
+  #                            lamPos = lamPos, LOO = loo,
+  #                            univariate.fit = list(beta = unifit$beta,
+  #                                                  beta0 = unifit$beta0,
+  #                                                  fitted.values = f)
+  # ))
+  # ones = rep(1,fit$nalam)
+  # unibeta <- outer(unifit$beta, ones)
+  # unibeta0 <- outer(unifit$beta0, ones)
+  # beta_temp = outlist$beta
+  # beta0_temp = outlist$b0
+  #
+  # row_idx <- beta_temp@i + 1
+  # col_ptrs <- beta_temp@p
+  # col_idx <- rep(seq_along(col_ptrs[-1]), diff(col_ptrs))
+  # beta_result <- beta_temp
+  # beta_result@x <- beta_temp@x * unibeta[cbind(row_idx, col_idx)]
+  #
+  # outlist$beta = beta_result
+  # outlist$b0 = beta0_temp + colSums(unibeta0 * beta_temp)
+  #
+  # outlist$fbeta = beta_temp; outlist$fb0 = beta0_temp
+  # class(outlist) <- c("sunipath_2")
+  # outlist
 }

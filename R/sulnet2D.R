@@ -240,7 +240,7 @@ sulnet2D <- function(x, y, nlambda = 100,
                      method = c(
                        "suni_2", "adasuni", "adasuni2", "sunilambdatest",
                        "adasunilambdatest", "adasuni2lambdatest",
-                       "septhresh"
+                       "septhresh", "cgsep"
                      ),
                      family = c("gaussian", "binomial", "cox"),
                      lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
@@ -248,7 +248,7 @@ sulnet2D <- function(x, y, nlambda = 100,
                      pf2 = rep(1, nvars), exclude, dfmax = nvars + 1,
                      pmax = min(dfmax * 1.2, nvars), standardize = FALSE,
                      intercept = TRUE, eps = 1e-08, maxit = 1e+05, lamPos = 0.1,
-                     loo = TRUE, alpha = seq(0, 0.5, length.out = 11),
+                     loo = TRUE, alpha = seq(0.01, 0.99, length.out = 21),
                      asuweight = c("ols", "lasso", "lasso_ols", "univar"),
                      negOnly = FALSE) {
   ################################################################################
@@ -292,8 +292,13 @@ sulnet2D <- function(x, y, nlambda = 100,
   lamPos <- as.double(sort(lamPos))
   ignore_lamPos <- FALSE
   if (!is.null(alpha)) {
-    alpha <- as.double(sort(alpha))
+    alpha <- as.double(sort(abs(alpha)))
     ignore_lamPos <- TRUE
+    if (method == "cgsep") {
+      alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.5) + 0.5
+    } else {
+      alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.01) + 0.01
+    }
   }
   if (!missing(exclude)) {
     jd <- match(exclude, seq(nvars), 0)
@@ -368,6 +373,11 @@ sulnet2D <- function(x, y, nlambda = 100,
         nobs, nvars, vnames, alpha, ignore_lamPos, asuweight
       ),
       septhresh = septhreshpath(
+        x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+        pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+        nobs, nvars, vnames, alpha, ignore_lamPos
+      ),
+      cgsep = cgseppath(
         x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
         pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
         nobs, nvars, vnames, alpha, ignore_lamPos

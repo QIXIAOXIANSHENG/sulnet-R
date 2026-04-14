@@ -9,7 +9,7 @@ sulnet2D(
   y,
   nlambda = 100,
   method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest", "adasunilambdatest",
-    "adasuni2lambdatest", "septhresh"),
+    "adasuni2lambdatest", "septhresh", "cgsep"),
   family = c("gaussian", "binomial", "cox"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
@@ -25,7 +25,7 @@ sulnet2D(
   maxit = 1e+05,
   lamPos = 0.1,
   loo = TRUE,
-  alpha = seq(0, 0.5, length.out = 11),
+  alpha = seq(0.01, 0.99, length.out = 21),
   asuweight = c("ols", "lasso", "lasso_ols", "univar"),
   negOnly = FALSE
 )

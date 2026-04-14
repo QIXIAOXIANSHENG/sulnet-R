@@ -1,7 +1,7 @@
 Package: sulnet
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.2.5
+Version: 0.2.6
 Authors@R: c(
     person(
       "Zhihan", "Chen",
@@ -19,4 +19,5 @@ Imports:
     plotly,
     Matrix,
     stats,
-    survival
+    survival,
+    ridge
