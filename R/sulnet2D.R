@@ -295,9 +295,17 @@ sulnet2D <- function(x, y, nlambda = 100,
     alpha <- as.double(sort(abs(alpha)))
     ignore_lamPos <- TRUE
     if (method == "cgsep") {
-      alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.5) + 0.5
+      if (length(alpha) > 1) {
+        alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.5) + 0.5
+      } else {
+        alpha <- min(1, max(alpha, 0.5))
+      }
     } else {
-      alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.01) + 0.01
+      if (length(alpha) > 1) {
+        alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.01) + 0.01
+      } else {
+        alpha <- min(1, max(alpha, 0.5))
+      }
     }
   }
   if (!missing(exclude)) {
