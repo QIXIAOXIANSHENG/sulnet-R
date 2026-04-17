@@ -35,7 +35,7 @@ logsunipath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd
     # f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
     unifit <- uniInfo(x, y, family = "binomial", loo = loo)
     f <- unifit$F
-    f[which(abs(f) == Inf)] <- max(f[which(abs(f) != Inf)]) * sign(f[which(abs(f) == Inf)]) * 10
+    f[which(abs(f) == Inf)] <- max(f[which(abs(f) != Inf)]) * sign(f[which(abs(f) == Inf)]) * 1e20
 
     storage.mode(f) <- "double"
     while (TRUE) {
