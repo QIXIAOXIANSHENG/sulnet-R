@@ -1,3 +1,7 @@
+##' @import Matrix
+##' @importFrom stats cor lm.fit sd
+##' @import survival
+
 coxsuninet <- function(x, is.sparse, y, weights, offset, parm, nobs, nvars, jd, vp, ne, nx, nlam, flmin, ulam, thresh, isd, vnames, maxit, lamPos, alpha, iglamPos, negOnly, loo) {
   y <- response.coxnet(y)
   iglamPos <- as.integer(iglamPos)
@@ -170,9 +174,6 @@ coxsuninet <- function(x, is.sparse, y, weights, offset, parm, nobs, nvars, jd, 
     class(outlist) <- c("coxsunipath")
     return(outlist)
   }
-
-
-
 
 
   unifit <- .Fortran("loofit", nobs, nvars, x, ty, loo,

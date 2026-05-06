@@ -23,9 +23,11 @@ A plotly object is returned.
 # fit an elastic net penalized logistic regression with lambda2 = 1 for the
 # L2 penalty. Use the logistic loss as the cross validation prediction loss.
 # Use five-fold CV to choose the optimal lambda for the L1 penalty.
-data(FHT)
-set.seed(2011)
-cv=cv.sulnet2D(FHT$x, FHT$y)
+set.seed(1)
+x <- matrix(rnorm(2000), 200, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(200, 0, 0.1)
+cv <- cv.sulnet2D(x = x, y = y)
 plot(cv)
 
 }

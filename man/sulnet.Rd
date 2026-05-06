@@ -257,14 +257,15 @@ Note that the objective function in \code{sulnet} is \deqn{Loss(y,
   }
 }
 \examples{
-
-data(FHT)
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), each = c(5, 5))
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
 # 1. solution paths for the LASSO penalized least squares.
 # To use LASSO set lambda2 = 0.
 
-m1 <- sulnet(x = FHT$x, y = FHT$y_reg, lambda2 = 0, method = "ls")
+m1 <- sulnet(x = x, y = y, lambda2 = 0, method = "ls")
 plot(m1)
-
 
 }
 \references{

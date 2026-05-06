@@ -35,10 +35,15 @@ coefficients or make coefficient predictions.
 }
 \examples{
 
-data(FHT)
-set.seed(2011)
-cv <- cv.sulnet2D(FHT$x, FHT$y, nfolds = 5)
-coef(cv, s = "lambda.min")
+set.seed(1)
+x <- matrix(rnorm(2000), 200, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(200, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
+
+cv <- cv.sulnet2D(x = x, y = y)
+coef(cv, s = "cv.min")[[1]]
 
 }
 \references{

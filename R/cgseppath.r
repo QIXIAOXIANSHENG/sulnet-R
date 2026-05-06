@@ -1,9 +1,11 @@
 ##' @import Matrix
 ##' @importFrom ridge linearRidge
+##' @importFrom stats cor lm.fit sd
+
 
 cgseppath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, pf, # nolint
-                          pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
-                          alpha, ignore_lamPos) {
+                      pf2, maxit, lam2, lamPos, loo, negOnly, nobs, nvars, vnames,
+                      alpha, ignore_lamPos) {
   ################################################################################
   ## data setup
   y <- as.double(y)
@@ -17,7 +19,7 @@ cgseppath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, 
 
   if (negOnly) {
     corval <- abs(cor(x))
-    ridgefit <- abs(stats::coef(linearRidge(y~x))[-1])
+    ridgefit <- abs(stats::coef(linearRidge(y ~ x))[-1])
     cgwt <- ridgefit / (colSums(diag(ridgefit) %*% corval) - diag(corval) * ridgefit)
     cgwt <- as.double(cgwt)
     if (!is.null(alpha)) {
@@ -131,10 +133,9 @@ cgseppath <- function(x, y, nlam, flmin, ulam, isd, intr, eps, dfmax, pmax, jd, 
   f <- matrix(unifit$fit, nrow = nobs, ncol = nvars)
   storage.mode(f) <- "double"
   corval <- abs(cor(f))
-  ridgefit <- abs(stats::coef(linearRidge(y~f))[-1])
+  ridgefit <- abs(stats::coef(linearRidge(y ~ f))[-1])
   cgwt <- ridgefit / (colSums(diag(ridgefit) %*% corval) - diag(corval) * ridgefit)
   cgwt <- as.double(cgwt)
-
 
 
   if (!is.null(alpha)) {

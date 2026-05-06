@@ -29,13 +29,18 @@ Produces a coefficient profile plot of the coefficient paths for a fitted
 A coefficient profile plot is produced.
 }
 \examples{
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), each = c(5, 5))
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
 
-data(FHT)
-m1 <- sulnet(x = FHT$x,y = FHT$y)
-par(mfrow = c(1,3))
+m1 <- sulnet(x = x, y = y, lambda2 = 0, method = "ls")
+par(mfrow = c(1, 3))
 plot(m1) # plots against the L1-norm of the coefficients
-plot(m1,xvar = "lambda",label = TRUE) # plots against the log-lambda sequence
-plot(m1,color = TRUE)
+plot(m1, xvar = "lambda", label = TRUE) # plots against the log-lambda sequence
+plot(m1, color = TRUE)
 
 }
 \references{

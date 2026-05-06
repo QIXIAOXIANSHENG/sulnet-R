@@ -13,7 +13,7 @@
 #'
 #' @return A class "Surv" object.
 #'
-#' @importFrom survival Surv
+#' @importFrom survival Surv is.Surv
 response.coxnet <- function(y) {
   if (any(is.na(y))) stop(paste0("NAs encountered in response, not allowed"))
 
@@ -23,17 +23,22 @@ response.coxnet <- function(y) {
   # if all good, return with no changes
   if (is.Surv(y)) {
     if (attr(y, "type") == "right") {
-      if (any(y[, 1] <= 0))
-          stop("Non-positive event times encountered; not permitted for Cox family")
-      colnames(y) <- c("time","status")
+      if (any(y[, 1] <= 0)) {
+        stop("Non-positive event times encountered; not permitted for Cox family")
+      }
+      colnames(y) <- c("time", "status")
       return(y)
     } else if (attr(y, "type") == "counting") {
-      if (any(y[, 1] < 0) || any(y[, 2] <= 0))
-        stop(paste("Negative start/non-positive stop times encountered;",
-                   "not permitted for Cox family"))
-      if (any(y[, 1] >= y[, 2]))
+      if (any(y[, 1] < 0) || any(y[, 2] <= 0)) {
+        stop(paste(
+          "Negative start/non-positive stop times encountered;",
+          "not permitted for Cox family"
+        ))
+      }
+      if (any(y[, 1] >= y[, 2])) {
         stop("Some rows have start time >= stop time; not permitted")
-      colnames(y) <- c("start","stop","status")
+      }
+      colnames(y) <- c("start", "stop", "status")
       return(y)
     } else {
       stop("cox.path() only supports 'Surv' objects of type 'right' or 'counting'")
@@ -41,15 +46,21 @@ response.coxnet <- function(y) {
   }
 
   # if two-column matrix passed, make it into a Surv object
-  if (!is.matrix(y) || !all(match(c("time","status"),dimnames(y)[[2]],0)))
-    stop(paste0("Cox model requires a matrix with columns 'time' (>0) and ",
-                "'status' (binary) as a response; a 'Surv' object suffices"),
-         call. = FALSE)
-  ty <- as.double(y[,"time"])
-  tevent <- as.double(y[,"status"])
-  if (any(ty <= 0))
+  if (!is.matrix(y) || !all(match(c("time", "status"), dimnames(y)[[2]], 0))) {
+    stop(
+      paste0(
+        "Cox model requires a matrix with columns 'time' (>0) and ",
+        "'status' (binary) as a response; a 'Surv' object suffices"
+      ),
+      call. = FALSE
+    )
+  }
+  ty <- as.double(y[, "time"])
+  tevent <- as.double(y[, "status"])
+  if (any(ty <= 0)) {
     stop("negative event times encountered; not permitted for Cox family")
+  }
   yob <- Surv(ty, tevent)
-  colnames(yob) <- c("time","status")
+  colnames(yob) <- c("time", "status")
   return(yob)
 }

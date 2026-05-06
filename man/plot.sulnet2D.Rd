@@ -19,6 +19,8 @@
 \item{xvar}{what is on the X-axis. \code{"norm"} plots against the L1-norm
 of the coefficients, \code{"lambda"} against the log-lambda sequence.}
 
+\item{yvar}{The y-axis.}
+
 \item{color}{if \code{TRUE}, plot the curves with rainbow colors.
 \code{FALSE} is gray colors. Default is \code{FALSE}}
 
@@ -37,12 +39,18 @@ A coefficient profile plot is produced.
 }
 \examples{
 
-data(FHT)
-m1 <- sulnet2D(x = FHT$x,y = FHT$y)
-par(mfrow = c(1,3))
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
+
+m1 <- sulnet2D(x = x, y = y)
+par(mfrow = c(1, 3))
 plot(m1) # plots against the L1-norm of the coefficients
-plot(m1,xvar = "lambda",label = TRUE) # plots against the log-lambda sequence
-plot(m1,color = TRUE)
+plot(m1, xvar = "lambda", label = TRUE) # plots against the log-lambda sequence
+plot(m1, color = TRUE)
 
 }
 \references{

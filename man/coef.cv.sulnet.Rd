@@ -35,9 +35,11 @@ coefficients or make coefficient predictions.
 }
 \examples{
 
-data(FHT)
-set.seed(2011)
-cv <- cv.sulnet(FHT$x, FHT$y, lambda2 = 1, nfolds = 5)
+set.seed(1)
+x <- matrix(rnorm(2000), 200, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(200, 0, 0.1)
+cv <- cv.sulnet(x = x, y = y)
 coef(cv, s = "lambda.min")
 
 }

@@ -4,7 +4,13 @@
 \alias{transulnet}
 \title{A testing code for conducting transfer learning}
 \usage{
-transulnet(d0, dA, method = c("suni_tsloo", "suni_sloo", "suni_s"), ...)
+transulnet(
+  d0,
+  dA,
+  method = c("suni_tsloo", "suni_sloo", "suni_s"),
+  loo = TRUE,
+  ...
+)
 }
 \arguments{
 \item{d0}{Target data, a list of two objects \code{x} and \code{y}}
@@ -13,6 +19,8 @@ transulnet(d0, dA, method = c("suni_tsloo", "suni_sloo", "suni_s"), ...)
 structure as \code{d0}.}
 
 \item{method}{Transferring method, default is \code{"suni_tsloo"}.}
+
+\item{loo}{Using LOO or not, default is \code{TRUE}.}
 
 \item{...}{optional arguments to function \code{sulnet2D}.}
 }
@@ -23,17 +31,21 @@ A S3 class same as what \code{sulnet2D} with \code{negOnly = TRUE} would return.
 A short description...
 }
 \examples{
-n = 20
-p = 10
-beta = runif(p)
-nA = 5
-x = matrix(rnorm(n*p),nrow = n)
-d0 = list(x = x,
-          y = x \%*\% beta)
-dA = lapply(seq(nA),function(a){
-  x = matrix(rnorm(n*p),nrow = n)
-  list(x = x,
-  y = x \%*\% (beta + rnorm(p,0, 0.05)))
+n <- 20
+p <- 10
+beta <- runif(p)
+nA <- 5
+x <- matrix(rnorm(n * p), nrow = n)
+d0 <- list(
+  x = x,
+  y = x \%*\% beta
+)
+dA <- lapply(seq(nA), function(a) {
+  x <- matrix(rnorm(n * p), nrow = n)
+  list(
+    x = x,
+    y = x \%*\% (beta + rnorm(p, 0, 0.05))
+  )
 })
-fit = transulnet(d0, dA)
+fit <- transulnet(d0, dA)
 }

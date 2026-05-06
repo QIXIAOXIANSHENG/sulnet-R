@@ -27,8 +27,12 @@ by a two-column matrix with columns \code{Df} and \code{Lambda}. The
 }
 \examples{
 
-data(FHT)
-m1 <- sulnet(x = FHT$x, y = FHT$y, delta = 1, lambda2 = 0.1)
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
+
+m1 <- sulnet(x = x, y = y, lambda2 = 0, method = "ls")
 print(m1)
 
 }

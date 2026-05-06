@@ -35,11 +35,16 @@ make a prediction.
 }
 \examples{
 
-data(FHT)
+set.seed(1)
+x <- matrix(rnorm(2000), 200, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(200, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
+
 set.seed(2011)
-cv=cv.sulnet2D(FHT$x, FHT$y, lambda2 = 1, pred.loss="misclass",
-             lambda.factor=0.05, nfolds=5)
-pre = predict(cv$sulnet.fit, newx = FHT$x, s = "cv.min")
+cv1 <- cv.sulnet2D(x, y)
+pre <- predict(cv1, newx = matrix(rnorm(2000), 200, 10), s = "cv.min")
 
 }
 \references{

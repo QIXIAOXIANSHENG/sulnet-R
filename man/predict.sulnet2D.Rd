@@ -47,9 +47,15 @@ both left and right \code{lambda} indices.
 }
 \examples{
 
-data(FHT)
-m1 <- sulnet2D(x = FHT$x,y = FHT$y)
-print(predict(m1, type = "class",newx = FHT$x[2:5, ]))
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
+
+m1 <- sulnet2D(x = x, y = y)
+predict(m1, newx = matrix(rnorm(200), 20, 10))
 
 }
 \references{

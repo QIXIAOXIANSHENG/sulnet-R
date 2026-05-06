@@ -43,6 +43,8 @@ classification.}
 options are: \itemize{ \item \code{"ls"} least square loss. \item \code{"suni"} # nolint
 soft unilasso loss. } Default is \code{"ls"}.}
 
+\item{family}{The family of data, valid options are: \itemize{\item \code{gaussian} The gaussian family for linear regression \item{binomial} The binomial family for logistic regression \item{cox} The cox family for cox regression}}
+
 \item{lambda.factor}{The factor for getting the minimal lambda in
 \code{lambda} sequence, where \code{min(lambda)} = \code{lambda.factor} *
 \code{max(lambda)}, where \code{max(lambda)} is the smallest value of
@@ -263,13 +265,15 @@ Note that the objective function in \code{sulnet} is \deqn{Loss(y,
 }
 \examples{
 
-data(FHT)
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
 # 1. solution paths for the LASSO penalized least squares.
 # To use LASSO set lambda2 = 0.
 
-m1 <- sulnet2D(x = FHT$x, y = FHT$y_reg)
+m1 <- sulnet2D(x = x, y = y)
 plot(m1)
-
 
 }
 \references{

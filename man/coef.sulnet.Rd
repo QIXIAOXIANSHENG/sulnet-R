@@ -42,10 +42,16 @@ are interpolated using a fraction of coefficients from both left and right
 }
 \examples{
 
-data(FHT)
-fit1 <- sulnet(x = FHT$x,y = FHT$y)
-coef(fit1, type = "coef", s = c(0.1,0.005))
-coef(fit1, type = "nonzero")
+set.seed(1)
+x <- matrix(rnorm(2000), 200, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(200, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
+
+cv1 <- cv.sulnet(x = x, y = y, lambda2 = 0, method = "ls")
+coef(cv1, type = "coef")
+coef(cv1, type = "nonzero")
 
 }
 \references{

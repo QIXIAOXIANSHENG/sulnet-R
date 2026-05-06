@@ -78,18 +78,14 @@ over the folds are computed.
 # Use the misclassification rate as the cross validation prediction loss.
 # Use five-fold CV to choose the optimal lambda for the L1 penalty.
 
-data(FHT)
+set.seed(1)
+x <- matrix(rnorm(2000), 200, 10)
+beta <- rep(c(1, 0), each = c(5, 5))
+y <- x \%*\% beta + rnorm(200, 0, 0.1)
+# 1. solution paths for the LASSO penalized least squares.
+# To use LASSO set lambda2 = 0.
 
-# fit an elastic net penalized least squares
-# with lambda2 = 0.1 for the L2 penalty. Use the
-# least square loss as the cross validation
-# prediction loss. Use five-fold CV to choose
-# the optimal lambda for the L1 penalty.
-
-set.seed(2011)
-cv1 <- cv.sulnet(FHT$x, FHT$y_reg, method ="ls",
-                 lambda2 = 0.1, pred.loss = "loss",
-                 nfolds = 5)
+cv1 <- cv.sulnet(x = x, y = y, lambda2 = 0, method = "ls")
 plot(cv1)
 
 

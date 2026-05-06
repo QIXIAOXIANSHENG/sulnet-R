@@ -12,6 +12,8 @@ uniFit(x, y, loo = TRUE, family = c("gaussian", "binomial"))
 \item{y}{Input y vector of dimension n}
 
 \item{loo}{Logical, whether apply leave one out or not. Default is \code{TRUE}}
+
+\item{family}{The family of data, valid options are: \itemize{\item \code{gaussian} The gaussian family for linear regression \item{binomial} The binomial family for logistic regression \item{cox} The cox family for cox regression}}
 }
 \value{
 A list with \begin{\itemize}
@@ -24,6 +26,9 @@ A list with \begin{\itemize}
 Fitting univariate response
 }
 \examples{
-data(FHT)
-unifit <- uniFit(FHT$x, FHT$y_reg)
+set.seed(1)
+x <- matrix(rnorm(200), 20, 10)
+beta <- rep(c(1, 0), 5)
+y <- x \%*\% beta + rnorm(20, 0, 0.1)
+unifit <- uniFit(x, y)
 }
