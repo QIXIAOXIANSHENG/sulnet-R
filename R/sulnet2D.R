@@ -243,7 +243,7 @@ sulnet2D <- function(x, y, nlambda = 100,
                      method = c(
                        "suni_2", "adasuni", "adasuni2", "sunilambdatest",
                        "adasunilambdatest", "adasuni2lambdatest",
-                       "septhresh", "cgsep"
+                       "septhresh"
                      ),
                      family = c("gaussian", "binomial", "cox"),
                      lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
@@ -297,18 +297,23 @@ sulnet2D <- function(x, y, nlambda = 100,
   if (!is.null(alpha)) {
     alpha <- as.double(sort(abs(alpha)))
     ignore_lamPos <- TRUE
-    if (method == "cgsep") {
-      if (length(alpha) > 1) {
-        alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.5) + 0.5
-      } else {
-        alpha <- min(1, max(alpha, 0.5))
-      }
+    # if (method == "cgsep") {
+    #   if (length(alpha) > 1) {
+    #     alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.5) + 0.5
+    #   } else {
+    #     alpha <- min(1, max(alpha, 0.5))
+    #   }
+    # } else {
+    #   if (length(alpha) > 1) {
+    #     alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.01) + 0.01
+    #   } else {
+    #     alpha <- min(1, max(alpha, 0.5))
+    #   }
+    # }
+    if (length(alpha) > 1) {
+      alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.01) + 0.01
     } else {
-      if (length(alpha) > 1) {
-        alpha <- (alpha - min(alpha)) / diff(range(alpha)) * (0.99 - 0.01) + 0.01
-      } else {
-        alpha <- min(1, max(alpha, 0.5))
-      }
+      alpha <- min(1, max(alpha, 0.5))
     }
   }
   if (!missing(exclude)) {
@@ -387,12 +392,12 @@ sulnet2D <- function(x, y, nlambda = 100,
         x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
         pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
         nobs, nvars, vnames, alpha, ignore_lamPos
-      ),
-      cgsep = cgseppath(
-        x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
-        pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
-        nobs, nvars, vnames, alpha, ignore_lamPos
       )
+      # cgsep = cgseppath(
+      #   x, y, nlam, flmin, ulam, isd, intr, eps, dfmax,
+      #   pmax, jd, pf, pf2, maxit, lam2, lamPos, loo, negOnly,
+      #   nobs, nvars, vnames, alpha, ignore_lamPos
+      # )
     )
   } else if (family == "cox") {
     cl <- rbind(-9e30, 9e30)

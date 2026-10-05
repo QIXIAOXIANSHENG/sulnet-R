@@ -19,10 +19,15 @@
 #' unifit <- uniFit(x, y)
 #' @export
 uniFit <- function(x, y, loo = TRUE, family = c("gaussian", "binomial")) {
-  x <- as.matrix(x)
-  storage.mode(x) <- "double"
-  loo <- as.logical(loo)
-  family <- match.arg(family)
+  # x <- as.matrix(x)
+  # storage.mode(x) <- "double"
+  # loo <- as.logical(loo)
+  # family <- match.arg(family)
+  # if (!is.null(beta_ju)) {
+  #   beta_ju <- as.logical(beta_ju)
+  #   if (length(beta_ju) != ncol(x)) stop("beta and beta_ju must have same length as number of columns in x")
+  #   x <- x[, !beta_ju]
+  # }
 
   np <- dim(x)
   nobs <- as.integer(np[1])

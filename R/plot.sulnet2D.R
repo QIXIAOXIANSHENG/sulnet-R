@@ -58,7 +58,6 @@
 #' @importFrom graphics matplot axis text
 #' @importFrom grDevices gray.colors rainbow
 #' @importFrom stats approx
-#' @import plotly
 #' @export
 plot.sulnet2D <- function(x, xvar = c("norm", "lambda"), yvar = c("final_coef", "middle_coef"),
                           color = FALSE,
