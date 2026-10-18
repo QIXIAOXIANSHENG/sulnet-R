@@ -28,6 +28,7 @@ uniFit <- function(x, y, loo = TRUE, family = c("gaussian", "binomial")) {
   #   if (length(beta_ju) != ncol(x)) stop("beta and beta_ju must have same length as number of columns in x")
   #   x <- x[, !beta_ju]
   # }
+  family <- match.arg(family)
 
   np <- dim(x)
   nobs <- as.integer(np[1])

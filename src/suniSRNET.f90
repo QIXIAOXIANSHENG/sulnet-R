@@ -1,13 +1,13 @@
-SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, ns,&
-& nr, us, ur, eps, isd, intr, maxit, napenalty, theta0, &
+SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nsum,&
+& nrate, usum, urate, eps, isd, intr, maxit, napenalty, theta0, &
 & theta, itheta, ntheta, apenalty, npass, jerr)
     IMPLICIT NONE
 
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: pmax
-    INTEGER :: ns
-    INTEGER :: nr
+    INTEGER :: nsum
+    INTEGER :: nrate
     INTEGER :: isd
     INTEGER :: intr
     INTEGER :: napenalty
@@ -15,8 +15,8 @@ SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, ns,&
     INTEGER :: jerr
     INTEGER :: maxit
     INTEGER :: jd(*)
-    INTEGER :: itheta(pmax, ns, nr)
-    INTEGER :: ntheta(ns, nr)
+    INTEGER :: itheta(pmax, nsum, nrate)
+    INTEGER :: ntheta(nsum, nrate)
     DOUBLE PRECISION :: lam2
     DOUBLE PRECISION :: eps
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -24,11 +24,11 @@ SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, ns,&
     DOUBLE PRECISION :: pf(nvars)
     DOUBLE PRECISION :: pf2(nvars)
     DOUBLE PRECISION :: pf3(nvars)
-    DOUBLE PRECISION :: us(ns)
-    DOUBLE PRECISION :: ur(nr)
-    DOUBLE PRECISION :: theta0(1, ns, nr)
-    DOUBLE PRECISION :: theta(pmax, ns, nr)
-    DOUBLE PRECISION :: apenalty(ns * nr, 2)
+    DOUBLE PRECISION :: usum(nsum)
+    DOUBLE PRECISION :: urate(nrate)
+    DOUBLE PRECISION :: theta0(1, nsum, nrate)
+    DOUBLE PRECISION :: theta(pmax, nsum, nrate)
+    DOUBLE PRECISION :: apenalty(nsum * nrate, 2)
 
     INTEGER :: j
     INTEGER :: l
@@ -50,7 +50,7 @@ SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, ns,&
     jerr = jerr + ierr
     ALLOCATE (xnorm(1:nvars), STAT=ierr)
     jerr = jerr + ierr
-    ALLOCATE (ind(1:(ns * nr), 1:4), STAT=ierr)
+    ALLOCATE (ind(1:(nsum * nrate), 1:4), STAT=ierr)
     jerr = jerr + ierr
     IF (jerr /= 0) RETURN
     CALL chkvars(nobs, nvars, x, ju)
@@ -71,10 +71,17 @@ SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, ns,&
     pf2 = MAX(0.0D0, pf2)
     pf3 = MAX(0.0D0, pf3)
     CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
-    CALL gridIndexSR(ns, nr, us, ur, ind)
-
+    CALL gridIndexSR(nsum, nrate, usum, urate, ind)
+    IF (isd == 1) THEN
+        DO l = 1, nvars
+            IF(ju(l) /= 0)  THEN
+                pf3(l) = pf3(l) / xnorm(l)
+                pf(l) = pf(l) / xnorm(l)
+            END IF
+        END DO
+    END IF
     CALL suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
-        & pmax, ns, nr, us, ur, eps, maxit, napenalty, theta0, &
+        & pmax, nsum, nrate, usum, urate, eps, maxit, napenalty, theta0, &
         & theta, itheta, ntheta, apenalty, npass, ind, intr, jerr)
     IF (jerr > 0) RETURN
 
@@ -99,7 +106,7 @@ END SUBROUTINE suniSRNET
 
 
 SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
-    & pmax, ns, nr, us, ur, eps, maxit, napenalty, theta0, theta, &
+    & pmax, nsum, nrate, usum, urate, eps, maxit, napenalty, theta0, theta, &
     & itheta, ntheta, apenalty, npass, ind, intr, jerr)
 
     IMPLICIT NONE
@@ -107,17 +114,17 @@ SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: pmax
-    INTEGER :: ns
-    INTEGER :: nr
+    INTEGER :: nsum
+    INTEGER :: nrate
     INTEGER :: maxit
     INTEGER :: napenalty
     INTEGER :: npass
     INTEGER :: intr
     INTEGER :: jerr
     INTEGER :: ju(nvars)
-    INTEGER :: itheta(pmax, ns, nr)
-    INTEGER :: ntheta(ns, nr)
-    INTEGER :: ind(ns*nr, 4)
+    INTEGER :: itheta(pmax, nsum, nrate)
+    INTEGER :: ntheta(nsum, nrate)
+    INTEGER :: ind(nsum*nrate, 4)
 
     DOUBLE PRECISION :: lam2
     DOUBLE PRECISION :: maj(nvars)
@@ -126,12 +133,12 @@ SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     DOUBLE PRECISION :: pf(nvars)
     DOUBLE PRECISION :: pf2(nvars)
     DOUBLE PRECISION :: pf3(nvars)
-    DOUBLE PRECISION :: us(ns)
-    DOUBLE PRECISION :: ur(nr)
+    DOUBLE PRECISION :: usum(nsum)
+    DOUBLE PRECISION :: urate(nrate)
     DOUBLE PRECISION :: eps
-    DOUBLE PRECISION :: theta0(1, ns, nr)
-    DOUBLE PRECISION :: theta(pmax, ns, nr)
-    DOUBLE PRECISION :: apenalty(ns*nr, 2)
+    DOUBLE PRECISION :: theta0(1, nsum, nrate)
+    DOUBLE PRECISION :: theta(pmax, nsum, nrate)
+    DOUBLE PRECISION :: apenalty(nsum*nrate, 2)
 
     DOUBLE PRECISION :: d
     DOUBLE PRECISION :: dif
@@ -158,7 +165,7 @@ SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     INTEGER :: npenalty
     INTEGER, DIMENSION(:), ALLOCATABLE :: mm
 
-    npenalty = ns * nr
+    npenalty = nsum * nrate
 
     ALLOCATE (t(0:nvars), STAT=jerr)
     ALLOCATE (oldtheta(0:nvars), STAT = ierr)
@@ -176,14 +183,14 @@ SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         it = ind(l, 2)
         prevz = ind(l, 3)
         prevt = ind(l, 4)
-        zeta = us(iz) / (1 + ur(it))
-        tau = us(iz) * ur(it) / (1 + ur(it))
+        zeta = usum(iz) / (1 + urate(it))
+        tau = usum(iz) * urate(it) / (1 + urate(it))
         t = 0.0D0
         oldtheta = 0.0D0
         mm = 0
         r = y
         ni = 0
-        IF(l > 1) THEN
+        IF(prevz > 0 .AND. prevt > 0) THEN
             ni = ntheta(prevz, prevt)
             t(0) = theta0(1, prevz, prevt)
             r = r - t(0)
@@ -305,8 +312,8 @@ SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         IF (ni > 0) theta(1:ni, iz, it) = t(itheta(1:ni, iz, it))
         ntheta(iz, it) = ni
         theta0(1, iz, it) = t(0)
-        apenalty(l, 1) = zeta
-        apenalty(l, 2) = tau
+        apenalty(l, 1) = usum(iz)
+        apenalty(l, 2) = urate(it)
         napenalty = l
     END DO
     DEALLOCATE (t, oldtheta, mm, r)

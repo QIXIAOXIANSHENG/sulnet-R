@@ -560,7 +560,7 @@ SUBROUTINE priorStandard(n, x, y, xmean, ymean, sdratio, xycor)
         sxy = sxy + dx * dy
     END DO
     ! -------- SD RATIO AND COVARIANCE -------- !
-    sdratio = SQRT(sxx/syy)
+    sdratio = SQRT(syy/sxx)
     xycor = sxy/SQRT(sxx*syy)
 END SUBROUTINE priorStandard
 

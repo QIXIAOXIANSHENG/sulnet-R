@@ -165,7 +165,9 @@ cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0.01, 0.99, length.out 
       name = cvname, sulnet2D.fit = sulnet2D.object
     )
   }
-  lamin <- getmin2D(lambda, alpha, cvm, cvsd, sulnet2D.object$use_alpha)
+  method <- ifelse(sulnet2D.object$use_alpha, "lambda_alpha", "lambda_lamPos")
+
+  lamin <- getmin2D(lambda, alpha, cvm, cvsd, method)
   obj <- c(out, as.list(lamin))
   class(obj) <- "cv.sulnet2D"
   obj

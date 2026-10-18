@@ -1,30 +1,52 @@
-##' @export
-cv.sunipath <- function(outlist, lambda, x, y, foldid, pred.loss, delta) {
-  typenames <- c(misclass = "Misclassification Error",
-                 loss = "Least Square Loss")
-  if (pred.loss == "default")
+cv.sunipath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
+  typenames <- c(
+    misclass = "Misclassification Error",
+    loss = "Least Square Loss"
+  )
+  if (pred.loss == "default") {
     pred.loss <- "loss"
+  }
   if (!match(pred.loss, c("loss"), FALSE)) {
     warning("Only 'loss' available for least squares regression; 'loss' used")
     pred.loss <- "loss"
   }
-  ## Turn y into c(0,1)
   y <- as.double(y)
   nfolds <- max(foldid)
-  predmat <- matrix(NA, length(y), length(lambda))
+  pen1name <- strsplit(method, "_")[[1]][1]
+
+  predmatlist <- vector("list", length = length(pen$pen2))
+  predmat <- matrix(NA, length(y), length(pen$pen1))
+  for (i in seq_along(predmatlist)) {
+    predmatlist[[i]] <- predmat
+  }
   nlams <- double(nfolds)
   for (i in seq(nfolds)) {
     which <- foldid == i
     fitobj <- outlist[[i]]
     preds <- predict(fitobj, x[which, , drop = FALSE], type = "link")
-    nlami <- length(outlist[[i]]$lambda)
-    predmat[which, seq(nlami)] <- preds
+    nlami <- length(outlist[[i]][[pen1name]])
+    for (a in seq_along(predmatlist)) {
+      predmatlist[[a]][which, seq(nlami)] <- preds[[a]]
+    }
+    # predmat[which, seq(nlami)] <- preds
     nlams[i] <- nlami
   }
-  cvraw <- (y-predmat)^2
-  N <- length(y) - apply(is.na(predmat), 2, sum)
-  cvm <- apply(cvraw, 2, mean, na.rm = TRUE)
-  cvsd <- sqrt(apply(scale(cvraw, cvm, FALSE)^2,
-                     2, mean, na.rm = TRUE)/(N - 1))
+  cvraw <- lapply(predmatlist, function(predmat) {
+    (y - predmat)^2
+  })
+  N <- lapply(predmatlist, function(predmat) {
+    length(y) - apply(is.na(predmat), 2, sum)
+  })
+  cvm <- lapply(cvraw, function(x) {
+    apply(x, 2, mean, na.rm = TRUE)
+  })
+  cvsd <- lapply(seq_along(cvraw), function(x) {
+    sqrt(apply(scale(cvraw[[x]], cvm[[x]], FALSE)^2,
+      2, mean,
+      na.rm = TRUE
+    ) / (N[[x]] - 1))
+  })
+  cvm <- do.call(rbind, cvm)
+  cvsd <- do.call(rbind, cvsd)
   list(cvm = cvm, cvsd = cvsd, name = typenames[pred.loss])
 }

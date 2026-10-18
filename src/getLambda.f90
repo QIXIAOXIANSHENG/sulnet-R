@@ -171,7 +171,7 @@ SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, vp, flmin)
 END SUBROUTINE getlambdabinom
 
 
-SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint)
+SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint, isd, intr, diffz, difft)
     IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: big = 9.9E30
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
@@ -180,6 +180,8 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
     INTEGER :: nvars
     INTEGER :: nzeta
     INTEGER :: ntau
+    INTEGER :: isd
+    INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
@@ -187,12 +189,13 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
     DOUBLE PRECISION :: utau(ntau)
     DOUBLE PRECISION :: flminz
     DOUBLE PRECISION :: flmint
+    DOUBLE PRECISION :: diffz
+    DOUBLE PRECISION :: difft
     DOUBLE PRECISION :: vp(nvars)
     
     INTEGER :: l, j
     INTEGER :: ierr
-    INTEGER :: isd
-    INTEGER :: intr
+
     INTEGER :: ju(nvars)
     DOUBLE PRECISION :: zf
     DOUBLE PRECISION :: tf
@@ -212,18 +215,22 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
     IF (flminz < 1.0D0) THEN
         flminz = MAX(mfl, flminz)
         zf = flminz**(1.0D0/(DBLE(nzeta) - 1.0D0))
+    ELSE
+        diffz = -1.0D0
     END IF
     IF (flmint < 1.0D0) THEN
         flmint = MAX(mfl, flmint)
         tf = flmint**(1.0D0/(DBLE(ntau) - 1.0D0))
+    ELSE
+        difft = -1.0D0
     END IF
 
     CALL chkvars(nobs, nvars, x, ju)
 
-    isd = 0
-    intr = 1
+    ! isd = 0
+    ! intr = 1
     ! CALL DBLEPR("x0", -1, x(1,:), 14)
-    CALL standard(nobs, nvars, x, ju, 0, 1, xmean, xnorm, maj)
+    CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
     ! CALL DBLEPR("x", -1, x(1,:), 14)
     ! CALL DBLEPR("y", -1, y(1:14), 14)
     ! CALL DBLEPR("xmean", -1, xmean, 14)
@@ -264,6 +271,7 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
         END DO
         uzeta = ztemp
         ztemp = LOG(ztemp)
+        diffz = ztemp(2) - ztemp(3)
         uzeta(1) = EXP(2*ztemp(2) - ztemp(3))
     END IF
 
@@ -283,9 +291,127 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
         END DO
         utau = ttemp
         ttemp = LOG(ttemp)
+        difft = ttemp(2) - ttemp(3)
         utau(1) = EXP(2*ttemp(2) - ttemp(3))
     END IF
     DEALLOCATE (maj)
 END SUBROUTINE getzt
 
+SUBROUTINE getla(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
+    & x, y, vp, flmin, flmina, isd, intr)
+    DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
+    INTEGER :: nobs
+    INTEGER :: nvars
+    INTEGER :: nlambda
+    INTEGER :: nalpha
+
+    DOUBLE PRECISION :: x(nobs, nvars)
+    DOUBLE PRECISION :: y(nobs)
+    DOUBLE PRECISION :: ulambda(nlambda)
+    DOUBLE PRECISION :: ualpha(nalpha)
+    DOUBLE PRECISION :: flmin
+    DOUBLE PRECISION :: flmina
+    DOUBLE PRECISION :: vp(nvars)
+
+    DOUBLE PRECISION :: diffz
+    DOUBLE PRECISION :: difft
+    DOUBLE PRECISION :: maxa
+    DOUBLE PRECISION :: mina
+    DOUBLE PRECISION :: max_l
+    DOUBLE PRECISION :: max_a
+    DOUBLE PRECISION :: min_a
+    DOUBLE PRECISION :: min_l
+
+
+    diffz = 0.0D0
+    difft = 0.0D0
+
+    CALL getzt(nobs, nvars, nlambda, nalpha, ulambda, ualpha &
+    &, x, y, vp, flmin, flmina, isd, intr, diffz, difft)
+
+    
+    IF(flmina < 1.0D0) THEN
+        max_l = MAXVAL(ulambda)
+        max_a = MAXVAL(ualpha)
+        min_a = MINVAL(ualpha)
+        min_l = MINVAL(ulambda)
+        maxa = MAX(0.5D0, min_a / (max_l + max_a))
+        mina = MIN(1.0D0-mfl, &
+            & MAX(max_l, max_a)/(MAX(max_l, max_a)+MIN(min_l, min_a)))
+        IF (nalpha == 1) THEN
+            ualpha(1) = mina
+        ELSE
+            DO i = 1, nalpha
+                ualpha(i) = mina + (maxa - mina) * DBLE(i - 1) / DBLE(nalpha - 1)
+            END DO
+        END IF
+    END IF
+    IF(flmin < 1.0D0) THEN
+        ulambda = ulambda * 2.0D0
+    END IF
+    
+    
+END SUBROUTINE getla
+
+
+SUBROUTINE getsr(nobs, nvars, nsum, nrate, usum, urate,&
+    & x, y, vp, flmins, flminr, isd, intr)
+    DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
+
+    INTEGER :: nobs
+    INTEGER :: nvars
+    INTEGER :: nsum
+    INTEGER :: nrate
+
+    DOUBLE PRECISION :: x(nobs, nvars)
+    DOUBLE PRECISION :: y(nobs)
+    DOUBLE PRECISION :: usum(nsum)
+    DOUBLE PRECISION :: urate(nrate)
+    DOUBLE PRECISION :: flmins
+    DOUBLE PRECISION :: flminr
+    DOUBLE PRECISION :: vp(nvars)
+
+    DOUBLE PRECISION :: diffz
+    DOUBLE PRECISION :: difft
+    DOUBLE PRECISION :: maxr
+    DOUBLE PRECISION :: minr
+    DOUBLE PRECISION :: max_s
+    DOUBLE PRECISION :: max_r
+    DOUBLE PRECISION :: min_s
+    DOUBLE PRECISION :: min_r
+    DOUBLE PRECISION :: step
+
+
+    diffz = 0.0D0
+    difft = 0.0D0
+
+    CALL getzt(nobs, nvars, nsum, nrate, usum, urate &
+    &, x, y, vp, flmins, flminr, isd, intr, diffz, difft)
+
+    
+    IF(flminr < 1.0D0) THEN
+        max_s = MAXVAL(usum)
+        max_r = MAXVAL(urate)
+        min_r = MINVAL(urate)
+        min_s = MINVAL(usum)
+        maxr = MAX(0.5D0, min_r / (max_s + max_r))
+        minr = MIN(1.0D0-mfl, &
+            & MAX(max_s, max_r)/(MAX(max_s, max_r)+MIN(min_s, min_r)))
+        maxr = maxr / (1 - maxr)
+        minr = minr / (1 - minr)
+        IF (nrate == 1) THEN
+            urate(1) = minr
+        ELSE
+            step = (LOG(maxr) - LOG(minr)) / DBLE(nrate-1)
+            DO i = 1, nrate
+                urate(i) = minr * EXP(DBLE(i-1) * step)
+            END DO
+        END IF
+    END IF
+    IF(flmin < 1.0D0) THEN
+        usum = usum * 2.0D0
+    END IF
+    
+    
+END SUBROUTINE getsr

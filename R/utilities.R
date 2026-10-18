@@ -137,61 +137,318 @@ getmin <- function(lambda, cvm, cvsd) {
   list(lambda.min = lambda.min, lambda.1se = lambda.1se)
 }
 
-getmin2D <- function(lambda, alpha, cvm, cvsd, use_alpha) {
+getmin2D <- function(pen1, pen2, cvm, cvsd, method) {
+  # pen1 <- rev(sort(pen1))
+  npen2 <- rev(sort(pen2))
+  if (!all(pen2 == npen2)) {
+    pen2 <- npen2
+    cvm <- cvm[, rev(seq_len(ncol(cvm))), drop = FALSE]
+    cvsd <- cvsd[, rev(seq_len(ncol(cvsd))), drop = FALSE]
+  }
   cvmin <- min(cvm, na.rm = TRUE)
   idmin <- which(cvm <= cvmin, arr.ind = TRUE)
 
-  # first pick alpha/lamPos such that it reaches maximum (preserve most sign consistency)
-  alpha.id <- which(max(alpha[idmin[, 1]], na.rm = TRUE) == alpha[idmin[, 1]])
-  lambda.id <- which.max(lambda[idmin[alpha.id, 2]])
-  lambda.min <- max(lambda[idmin[alpha.id, 2]])
-  alpha.min <- alpha[idmin[alpha.id[lambda.id], 1]]
+  # first pick pen2/lamPos such that it reaches maximum (preserve most sign consistency)
+  pen2.id <- which(max(pen2[idmin[, 1]], na.rm = TRUE) == pen2[idmin[, 1]])
+  pen1.id <- which.max(pen1[idmin[pen2.id, 2]])
+  pen1.min <- max(pen1[idmin[pen2.id, 2]])
+  pen2.min <- pen2[idmin[pen2.id[pen1.id], 1]]
 
-  lambdaidmin <- match(lambda.min, lambda)
-  alphaidmin <- match(alpha.min, alpha)
+  pen1idmin <- match(pen1.min, pen1)
+  pen2idmin <- match(pen2.min, pen2)
 
-  # 1se, same rule for choosing alpha/lamPos and lambda
-  semin <- (cvm + cvsd)[alphaidmin, lambdaidmin]
+  # 1se, same rule for choosing pen2/lamPos and pen1
+  semin <- (cvm + cvsd)[pen2idmin, pen1idmin]
   idse <- which(cvm <= semin, arr.ind = TRUE)
-  idse <- matrix(idse[idse[, 1] >= alphaidmin, ], ncol = 2)
-  idse <- matrix(idse[idse[, 2] <= lambdaidmin, ], ncol = 2)
+  idse <- matrix(idse[idse[, 1] >= pen2idmin, ], ncol = 2)
+  idse <- matrix(idse[idse[, 2] <= pen1idmin, ], ncol = 2)
 
   ## method 1, in the selected region choose the row/col index s.t. cvm max
   # rowse <- which((cvm + cvsd)[idse] == max((cvm + cvsd)[idse]),arr.ind = TRUE)
-  ## method 2, in the selected region choose the row/col index s.t. alpha/lamPos max, then lambda max
+  ## method 2, in the selected region choose the row/col index s.t. pen2/lamPos max, then pen1 max
   rowse <- which(idse[, 1] == max(idse[, 1]))
   rowse <- rowse[which(idse[rowse, 2] == min(idse[rowse, 2]))]
 
   idse <- matrix(idse[rowse, ], ncol = 2)
 
-  alpha.id <- which(max(alpha[idse[, 1]]) == alpha[idse[, 1]])
-  lambda.id <- which.max(lambda[idse[alpha.id, 2]])
-  lambda.se <- max(lambda[idse[alpha.id, 2]])
-  alpha.se <- alpha[idse[alpha.id[lambda.id], 1]]
+  pen2.id <- which(max(pen2[idse[, 1]]) == pen2[idse[, 1]])
+  pen1.id <- which.max(pen1[idse[pen2.id, 2]])
+  pen1.se <- max(pen1[idse[pen2.id, 2]])
+  pen2.se <- pen2[idse[pen2.id[pen1.id], 1]]
 
-  if (use_alpha) {
-    return(list(
-      cv.min = list(
-        lambda.min = lambda.min,
-        alpha.min = alpha.min
-      ),
-      cv.1se = list(
-        lambda.1se = lambda.se,
-        alpha.1se = alpha.se
-      )
-    ))
-  } else {
-    return(list(
-      cv.min = list(
-        lambda.min = lambda.min,
-        lamPos.min = alpha.min
-      ),
-      cv.1se = list(
-        lambda.1se = lambda.se,
-        lamPos.1se = alpha.se
-      )
-    ))
+  cv.min <- list(pen1.min, pen2.min)
+  names(cv.min) <- strsplit(method, "_")[[1]]
+  cv.1se <- list(pen1.se, pen2.se)
+  names(cv.1se) <- strsplit(method, "_")[[1]]
+  return(list(cv.min = cv.min, cv.1se = cv.1se))
+}
+
+
+
+getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
+  nzeta <- as.integer(fit$nzeta[1L])
+  ntau <- as.integer(fit$ntau[1L])
+
+  zeta <- as.numeric(fit$uzeta[seq_len(nzeta)])
+  tau <- as.numeric(fit$utau[seq_len(ntau)])
+
+  npenalty <- nzeta * ntau
+  napenalty <- as.integer(fit$napenalty[1L])
+
+  if (napenalty < 0L || napenalty > npenalty) {
+    stop("invalid napenalty returned by suniZTNET", call. = FALSE)
   }
+
+  ## ------------------------------------------------------------
+  ## Check Fortran error
+  ## ------------------------------------------------------------
+  errmsg <- err(fit$jerr, maxit, pmax)
+
+  if (errmsg$n == 1L) {
+    stop(errmsg$msg, call. = FALSE)
+  }
+
+  if (errmsg$n == -1L) {
+    msg <- gsub(
+      "lambda value",
+      "penalty combination",
+      errmsg$msg,
+      fixed = TRUE
+    )
+    msg <- gsub(
+      "larger lambdas",
+      "earlier penalty combinations",
+      msg,
+      fixed = TRUE
+    )
+    warning(msg, call. = FALSE)
+  }
+
+  ## ------------------------------------------------------------
+  ## Names
+  ## ------------------------------------------------------------
+  zetanames <- paste0("z", seq_len(nzeta) - 1L)
+  taunames <- paste0("t", seq_len(ntau) - 1L)
+
+  ## ------------------------------------------------------------
+  ## ntheta
+  ##
+  ## Fortran:
+  ##   ntheta(nzeta, ntau)
+  ##
+  ## Note that ntheta is the number of variables in the active set,
+  ## not necessarily the number of nonzero theta values.
+  ## ------------------------------------------------------------
+  ntheta <- matrix(
+    as.integer(fit$ntheta[seq_len(npenalty)]),
+    nrow = nzeta,
+    ncol = ntau,
+    dimnames = list(zetanames, taunames)
+  )
+
+  ## ------------------------------------------------------------
+  ## theta0
+  ##
+  ## Fortran:
+  ##   theta0(1, nzeta, ntau)
+  ##
+  ## Since the first dimension is 1, its R vectorization is
+  ## equivalent to an nzeta x ntau matrix.
+  ## ------------------------------------------------------------
+  theta0 <- matrix(
+    as.numeric(fit$theta0[seq_len(npenalty)]),
+    nrow = nzeta,
+    ncol = ntau,
+    dimnames = list(zetanames, taunames)
+  )
+
+  ## ------------------------------------------------------------
+  ## Penalty traversal path
+  ##
+  ## apenalty(l, 1) = zeta
+  ## apenalty(l, 2) = tau
+  ##
+  ## Only rows 1:napenalty are valid.
+  ## ------------------------------------------------------------
+  apenalty <- matrix(
+    as.numeric(fit$apenalty[seq_len(2L * npenalty)]),
+    nrow = npenalty,
+    ncol = 2L
+  )
+  colnames(apenalty) <- c("zeta", "tau")
+
+  if (napenalty > 0L) {
+    penalty.path <- apenalty[seq_len(napenalty), , drop = FALSE]
+    rownames(penalty.path) <- paste0(
+      "p",
+      seq_len(napenalty) - 1L
+    )
+  } else {
+    penalty.path <- apenalty[FALSE, , drop = FALSE]
+  }
+
+  ## ------------------------------------------------------------
+  ## Determine which grid points were actually computed.
+  ##
+  ## Normally all entries are TRUE. This is mainly needed when
+  ## suniZTNET returns partial results after a non-fatal error.
+  ## ------------------------------------------------------------
+  computed <- matrix(
+    FALSE,
+    nrow = nzeta,
+    ncol = ntau,
+    dimnames = list(zetanames, taunames)
+  )
+
+  if (napenalty == npenalty) {
+    computed[, ] <- TRUE
+  } else if (napenalty > 0L) {
+    iz.path <- match(penalty.path[, 1L], zeta)
+    it.path <- match(penalty.path[, 2L], tau)
+
+    if (anyNA(iz.path) || anyNA(it.path)) {
+      stop(
+        "apenalty returned by suniZTNET does not match uzeta/utau",
+        call. = FALSE
+      )
+    }
+
+    computed[cbind(iz.path, it.path)] <- TRUE
+  }
+
+  ## Uncomputed intercepts should not look like valid zero models.
+  theta0[!computed] <- NA_real_
+
+  ## ------------------------------------------------------------
+  ## df:
+  ##   rows    = zeta
+  ##   columns = tau
+  ##
+  ## Important:
+  ## ntheta is the active-set size, whereas df is the actual
+  ## number of nonzero theta coefficients.
+  ## ------------------------------------------------------------
+  df <- matrix(
+    NA_integer_,
+    nrow = nzeta,
+    ncol = ntau,
+    dimnames = list(zetanames, taunames)
+  )
+
+  ## ------------------------------------------------------------
+  ## theta:
+  ##
+  ## theta[[it]] is an nvars x nzeta dgCMatrix for tau[it].
+  ##
+  ## Rows    = variables
+  ## Columns = zeta values
+  ##
+  ## We intentionally do NOT first convert fit$theta and fit$itheta
+  ## into dense 3D R arrays. Direct linear indexing avoids an
+  ## unnecessary large memory copy.
+  ## ------------------------------------------------------------
+  theta <- vector("list", ntau)
+  names(theta) <- taunames
+
+  for (it in seq_len(ntau)) {
+    i.parts <- vector("list", nzeta)
+    j.parts <- vector("list", nzeta)
+    x.parts <- vector("list", nzeta)
+
+    for (iz in seq_len(nzeta)) {
+      if (!computed[iz, it]) {
+        next
+      }
+
+      nk <- ntheta[iz, it]
+
+      if (is.na(nk) || nk < 0L || nk > pmax) {
+        stop(
+          "invalid ntheta returned by suniZTNET",
+          call. = FALSE
+        )
+      }
+
+      if (nk == 0L) {
+        df[iz, it] <- 0L
+        next
+      }
+
+      ## Fortran array:
+      ##
+      ##   theta(pmax, nzeta, ntau)
+      ##   itheta(pmax, nzeta, ntau)
+      ##
+      ## R/Fortran both use column-major ordering, so the beginning
+      ## of cell (iz, it) is:
+      ##
+      ##   pmax * ((iz - 1) + nzeta * (it - 1))
+      ##
+      offset <- pmax * (
+        (iz - 1L) +
+          nzeta * (it - 1L)
+      )
+
+      pos <- offset + seq_len(nk)
+
+      rows <- as.integer(fit$itheta[pos])
+      vals <- as.numeric(fit$theta[pos])
+
+      if (any(rows < 1L | rows > nvars)) {
+        stop(
+          "invalid itheta returned by suniZTNET",
+          call. = FALSE
+        )
+      }
+
+      ## ntheta is active-set size. Some variables in that active
+      ## set may have returned to exactly zero.
+      keep <- abs(vals) > 0
+
+      df[iz, it] <- sum(keep)
+
+      if (any(keep)) {
+        i.parts[[iz]] <- rows[keep]
+        j.parts[[iz]] <- rep.int(iz, sum(keep))
+        x.parts[[iz]] <- vals[keep]
+      }
+    }
+
+    ii <- as.integer(
+      unlist(i.parts, use.names = FALSE)
+    )
+    jj <- as.integer(
+      unlist(j.parts, use.names = FALSE)
+    )
+    xx <- as.numeric(
+      unlist(x.parts, use.names = FALSE)
+    )
+
+    theta[[it]] <- Matrix::sparseMatrix(
+      i = ii,
+      j = jj,
+      x = xx,
+      dims = c(nvars, nzeta),
+      dimnames = list(vnames, zetanames)
+    )
+  }
+
+  ## ntheta from an uncomputed grid point should also not be
+  ## interpreted as a valid active-set size.
+  ntheta[!computed] <- NA_integer_
+
+  list(
+    theta0 = theta0,
+    theta = theta,
+    df = df,
+    dim = c(nvars, nzeta, ntau),
+    zeta = zeta,
+    tau = tau,
+    ntheta = ntheta,
+    napenalty = napenalty,
+    computed = computed,
+    penalty.path = penalty.path
+  )
 }
 
 
@@ -234,6 +491,564 @@ getoutput <- function(fit, maxit, pmax, nvars, vnames) {
     names(b0) <- stepnames
   }
   list(b0 = b0, beta = beta, df = df, dim = dd, lambda = lam)
+}
+
+
+getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
+  nlambda <- as.integer(fit$nlambda[1L])
+  nalpha <- as.integer(fit$nalpha[1L])
+
+  lambda <- as.numeric(fit$ulambda[seq_len(nlambda)])
+  alpha <- as.numeric(fit$ualpha[seq_len(nalpha)])
+
+  npenalty <- nlambda * nalpha
+  napenalty <- as.integer(fit$napenalty[1L])
+
+  if (napenalty < 0L || napenalty > npenalty) {
+    stop("invalid napenalty returned by suniZTNET", call. = FALSE)
+  }
+
+  ## ------------------------------------------------------------
+  ## Check Fortran error
+  ## ------------------------------------------------------------
+  errmsg <- err(fit$jerr, maxit, pmax)
+
+  if (errmsg$n == 1L) {
+    stop(errmsg$msg, call. = FALSE)
+  }
+
+  if (errmsg$n == -1L) {
+    msg <- gsub(
+      "lambda value",
+      "penalty combination",
+      errmsg$msg,
+      fixed = TRUE
+    )
+    msg <- gsub(
+      "larger lambdas",
+      "earlier penalty combinations",
+      msg,
+      fixed = TRUE
+    )
+    warning(msg, call. = FALSE)
+  }
+
+  ## ------------------------------------------------------------
+  ## Names
+  ## ------------------------------------------------------------
+  lambdanames <- paste0("l", seq_len(nlambda) - 1L)
+  alphanames <- paste0("a", seq_len(nalpha) - 1L)
+  zeta <- outer(lambda, 1 - alpha, "*")
+  tau <- outer(lambda, 2 * alpha - 1, "*")
+
+  dimnames(zeta) <- list(lambdanames, alphanames)
+  dimnames(tau) <- list(lambdanames, alphanames)
+
+  ## ------------------------------------------------------------
+  ## ntheta
+  ##
+  ## Fortran:
+  ##   ntheta(nlambda, nalpha)
+  ##
+  ## Note that ntheta is the number of variables in the active set,
+  ## not necessarily the number of nonzero theta values.
+  ## ------------------------------------------------------------
+  ntheta <- matrix(
+    as.integer(fit$ntheta[seq_len(npenalty)]),
+    nrow = nlambda,
+    ncol = nalpha,
+    dimnames = list(lambdanames, alphanames)
+  )
+
+  ## ------------------------------------------------------------
+  ## theta0
+  ##
+  ## Fortran:
+  ##   theta0(1, nlambda, nalpha)
+  ##
+  ## Since the first dimension is 1, its R vectorization is
+  ## equivalent to an nlambda x nalpha matrix.
+  ## ------------------------------------------------------------
+  theta0 <- matrix(
+    as.numeric(fit$theta0[seq_len(npenalty)]),
+    nrow = nlambda,
+    ncol = nalpha,
+    dimnames = list(lambdanames, alphanames)
+  )
+
+  ## ------------------------------------------------------------
+  ## Penalty traversal path
+  ##
+  ## apenalty(l, 1) = lambda
+  ## apenalty(l, 2) = alpha
+  ##
+  ## Only rows 1:napenalty are valid.
+  ## ------------------------------------------------------------
+  apenalty <- matrix(
+    as.numeric(fit$apenalty[seq_len(2L * npenalty)]),
+    nrow = npenalty,
+    ncol = 2L
+  )
+  colnames(apenalty) <- c("lambda", "alpha")
+
+  if (napenalty > 0L) {
+    penalty.path <- apenalty[seq_len(napenalty), , drop = FALSE]
+    rownames(penalty.path) <- paste0(
+      "p",
+      seq_len(napenalty) - 1L
+    )
+  } else {
+    penalty.path <- apenalty[FALSE, , drop = FALSE]
+  }
+  penalty.path <- cbind(
+    penalty.path,
+    zeta = penalty.path[, "lambda"] *
+      (1 - penalty.path[, "alpha"]),
+    tau = penalty.path[, "lambda"] *
+      (2 * penalty.path[, "alpha"] - 1)
+  )
+
+  ## ------------------------------------------------------------
+  ## Determine which grid points were actually computed.
+  ##
+  ## Normally all entries are TRUE. This is mainly needed when
+  ## suniZTNET returns partial results after a non-fatal error.
+  ## ------------------------------------------------------------
+  computed <- matrix(
+    FALSE,
+    nrow = nlambda,
+    ncol = nalpha,
+    dimnames = list(lambdanames, alphanames)
+  )
+
+  if (napenalty == npenalty) {
+    computed[, ] <- TRUE
+  } else if (napenalty > 0L) {
+    iz.path <- match(penalty.path[, 1L], lambda)
+    it.path <- match(penalty.path[, 2L], alpha)
+
+    if (anyNA(iz.path) || anyNA(it.path)) {
+      stop(
+        "apenalty returned by suniZTNET does not match ulambda/ualpha",
+        call. = FALSE
+      )
+    }
+
+    computed[cbind(iz.path, it.path)] <- TRUE
+  }
+
+  ## Uncomputed intercepts should not look like valid zero models.
+  theta0[!computed] <- NA_real_
+
+  ## ------------------------------------------------------------
+  ## df:
+  ##   rows    = lambda
+  ##   columns = alpha
+  ##
+  ## Important:
+  ## ntheta is the active-set size, whereas df is the actual
+  ## number of nonzero theta coefficients.
+  ## ------------------------------------------------------------
+  df <- matrix(
+    NA_integer_,
+    nrow = nlambda,
+    ncol = nalpha,
+    dimnames = list(lambdanames, alphanames)
+  )
+
+  ## ------------------------------------------------------------
+  ## theta:
+  ##
+  ## theta[[it]] is an nvars x nlambda dgCMatrix for alpha[it].
+  ##
+  ## Rows    = variables
+  ## Columns = lambda values
+  ##
+  ## We intentionally do NOT first convert fit$theta and fit$itheta
+  ## into dense 3D R arrays. Direct linear indexing avoids an
+  ## unnecessary large memory copy.
+  ## ------------------------------------------------------------
+  theta <- vector("list", nalpha)
+  names(theta) <- alphanames
+
+  for (it in seq_len(nalpha)) {
+    i.parts <- vector("list", nlambda)
+    j.parts <- vector("list", nlambda)
+    x.parts <- vector("list", nlambda)
+
+    for (iz in seq_len(nlambda)) {
+      if (!computed[iz, it]) {
+        next
+      }
+
+      nk <- ntheta[iz, it]
+
+      if (is.na(nk) || nk < 0L || nk > pmax) {
+        stop(
+          "invalid ntheta returned by suniZTNET",
+          call. = FALSE
+        )
+      }
+
+      if (nk == 0L) {
+        df[iz, it] <- 0L
+        next
+      }
+
+      ## Fortran array:
+      ##
+      ##   theta(pmax, nlambda, nalpha)
+      ##   itheta(pmax, nlambda, nalpha)
+      ##
+      ## R/Fortran both use column-major ordering, so the beginning
+      ## of cell (iz, it) is:
+      ##
+      ##   pmax * ((iz - 1) + nlambda * (it - 1))
+      ##
+      offset <- pmax * (
+        (iz - 1L) +
+          nlambda * (it - 1L)
+      )
+
+      pos <- offset + seq_len(nk)
+
+      rows <- as.integer(fit$itheta[pos])
+      vals <- as.numeric(fit$theta[pos])
+
+      if (any(rows < 1L | rows > nvars)) {
+        stop(
+          "invalid itheta returned by suniZTNET",
+          call. = FALSE
+        )
+      }
+
+      ## ntheta is active-set size. Some variables in that active
+      ## set may have returned to exactly zero.
+      keep <- abs(vals) > 0
+
+      df[iz, it] <- sum(keep)
+
+      if (any(keep)) {
+        i.parts[[iz]] <- rows[keep]
+        j.parts[[iz]] <- rep.int(iz, sum(keep))
+        x.parts[[iz]] <- vals[keep]
+      }
+    }
+
+    ii <- as.integer(
+      unlist(i.parts, use.names = FALSE)
+    )
+    jj <- as.integer(
+      unlist(j.parts, use.names = FALSE)
+    )
+    xx <- as.numeric(
+      unlist(x.parts, use.names = FALSE)
+    )
+
+    theta[[it]] <- Matrix::sparseMatrix(
+      i = ii,
+      j = jj,
+      x = xx,
+      dims = c(nvars, nlambda),
+      dimnames = list(vnames, lambdanames)
+    )
+  }
+
+  ## ntheta from an uncomputed grid point should also not be
+  ## interpreted as a valid active-set size.
+  ntheta[!computed] <- NA_integer_
+
+  list(
+    theta0 = theta0,
+    theta = theta,
+    df = df,
+    dim = c(nvars, nlambda, nalpha),
+    lambda = lambda,
+    alpha = alpha,
+    ntheta = ntheta,
+    napenalty = napenalty,
+    computed = computed,
+    penalty.path = penalty.path
+  )
+}
+
+
+getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
+  nsum <- as.integer(fit$nsum[1L])
+  nrate <- as.integer(fit$nrate[1L])
+
+  sum <- as.numeric(fit$usum[seq_len(nsum)])
+  rate <- as.numeric(fit$urate[seq_len(nrate)])
+
+  npenalty <- nsum * nrate
+  napenalty <- as.integer(fit$napenalty[1L])
+
+  if (napenalty < 0L || napenalty > npenalty) {
+    stop("invalid napenalty returned by suniZTNET", call. = FALSE)
+  }
+
+  ## ------------------------------------------------------------
+  ## Check Fortran error
+  ## ------------------------------------------------------------
+  errmsg <- err(fit$jerr, maxit, pmax)
+
+  if (errmsg$n == 1L) {
+    stop(errmsg$msg, call. = FALSE)
+  }
+
+  if (errmsg$n == -1L) {
+    msg <- gsub(
+      "sum value",
+      "penalty combination",
+      errmsg$msg,
+      fixed = TRUE
+    )
+    msg <- gsub(
+      "larger sums",
+      "earlier penalty combinations",
+      msg,
+      fixed = TRUE
+    )
+    warning(msg, call. = FALSE)
+  }
+
+  ## ------------------------------------------------------------
+  ## Names
+  ## ------------------------------------------------------------
+  sumnames <- paste0("l", seq_len(nsum) - 1L)
+  ratenames <- paste0("a", seq_len(nrate) - 1L)
+  zeta <- outer(sum, rate / (1 + rate), "*")
+  tau <- outer(sum, (rate - 1) / (1 + rate), "*")
+
+  dimnames(zeta) <- list(sumnames, ratenames)
+  dimnames(tau) <- list(sumnames, ratenames)
+
+  ## ------------------------------------------------------------
+  ## ntheta
+  ##
+  ## Fortran:
+  ##   ntheta(nsum, nrate)
+  ##
+  ## Note that ntheta is the number of variables in the active set,
+  ## not necessarily the number of nonzero theta values.
+  ## ------------------------------------------------------------
+  ntheta <- matrix(
+    as.integer(fit$ntheta[seq_len(npenalty)]),
+    nrow = nsum,
+    ncol = nrate,
+    dimnames = list(sumnames, ratenames)
+  )
+
+  ## ------------------------------------------------------------
+  ## theta0
+  ##
+  ## Fortran:
+  ##   theta0(1, nsum, nrate)
+  ##
+  ## Since the first dimension is 1, its R vectorization is
+  ## equivalent to an nsum x nrate matrix.
+  ## ------------------------------------------------------------
+  theta0 <- matrix(
+    as.numeric(fit$theta0[seq_len(npenalty)]),
+    nrow = nsum,
+    ncol = nrate,
+    dimnames = list(sumnames, ratenames)
+  )
+
+  ## ------------------------------------------------------------
+  ## Penalty traversal path
+  ##
+  ## apenalty(l, 1) = sum
+  ## apenalty(l, 2) = rate
+  ##
+  ## Only rows 1:napenalty are valid.
+  ## ------------------------------------------------------------
+  apenalty <- matrix(
+    as.numeric(fit$apenalty[seq_len(2L * npenalty)]),
+    nrow = npenalty,
+    ncol = 2L
+  )
+  colnames(apenalty) <- c("sum", "rate")
+
+  if (napenalty > 0L) {
+    penalty.path <- apenalty[seq_len(napenalty), , drop = FALSE]
+    rownames(penalty.path) <- paste0(
+      "p",
+      seq_len(napenalty) - 1L
+    )
+  } else {
+    penalty.path <- apenalty[FALSE, , drop = FALSE]
+  }
+  penalty.path <- cbind(
+    penalty.path,
+    zeta = penalty.path[, "sum"] /
+      (1 + penalty.path[, "rate"]),
+    tau = penalty.path[, "sum"] *
+      (penalty.path[, "rate"] - 1) / (1 + penalty.path[, "rate"])
+  )
+
+  ## ------------------------------------------------------------
+  ## Determine which grid points were actually computed.
+  ##
+  ## Normally all entries are TRUE. This is mainly needed when
+  ## suniZTNET returns partial results after a non-fatal error.
+  ## ------------------------------------------------------------
+  computed <- matrix(
+    FALSE,
+    nrow = nsum,
+    ncol = nrate,
+    dimnames = list(sumnames, ratenames)
+  )
+
+  if (napenalty == npenalty) {
+    computed[, ] <- TRUE
+  } else if (napenalty > 0L) {
+    iz.path <- match(penalty.path[, 1L], sum)
+    it.path <- match(penalty.path[, 2L], rate)
+
+    if (anyNA(iz.path) || anyNA(it.path)) {
+      stop(
+        "apenalty returned by suniZTNET does not match usum/urate",
+        call. = FALSE
+      )
+    }
+
+    computed[cbind(iz.path, it.path)] <- TRUE
+  }
+
+  ## Uncomputed intercepts should not look like valid zero models.
+  theta0[!computed] <- NA_real_
+
+  ## ------------------------------------------------------------
+  ## df:
+  ##   rows    = sum
+  ##   columns = rate
+  ##
+  ## Important:
+  ## ntheta is the active-set size, whereas df is the actual
+  ## number of nonzero theta coefficients.
+  ## ------------------------------------------------------------
+  df <- matrix(
+    NA_integer_,
+    nrow = nsum,
+    ncol = nrate,
+    dimnames = list(sumnames, ratenames)
+  )
+
+  ## ------------------------------------------------------------
+  ## theta:
+  ##
+  ## theta[[it]] is an nvars x nsum dgCMatrix for rate[it].
+  ##
+  ## Rows    = variables
+  ## Columns = sum values
+  ##
+  ## We intentionally do NOT first convert fit$theta and fit$itheta
+  ## into dense 3D R arrays. Direct linear indexing avoids an
+  ## unnecessary large memory copy.
+  ## ------------------------------------------------------------
+  theta <- vector("list", nrate)
+  names(theta) <- ratenames
+
+  for (it in seq_len(nrate)) {
+    i.parts <- vector("list", nsum)
+    j.parts <- vector("list", nsum)
+    x.parts <- vector("list", nsum)
+
+    for (iz in seq_len(nsum)) {
+      if (!computed[iz, it]) {
+        next
+      }
+
+      nk <- ntheta[iz, it]
+
+      if (is.na(nk) || nk < 0L || nk > pmax) {
+        stop(
+          "invalid ntheta returned by suniZTNET",
+          call. = FALSE
+        )
+      }
+
+      if (nk == 0L) {
+        df[iz, it] <- 0L
+        next
+      }
+
+      ## Fortran array:
+      ##
+      ##   theta(pmax, nsum, nrate)
+      ##   itheta(pmax, nsum, nrate)
+      ##
+      ## R/Fortran both use column-major ordering, so the beginning
+      ## of cell (iz, it) is:
+      ##
+      ##   pmax * ((iz - 1) + nsum * (it - 1))
+      ##
+      offset <- pmax * (
+        (iz - 1L) +
+          nsum * (it - 1L)
+      )
+
+      pos <- offset + seq_len(nk)
+
+      rows <- as.integer(fit$itheta[pos])
+      vals <- as.numeric(fit$theta[pos])
+
+      if (any(rows < 1L | rows > nvars)) {
+        stop(
+          "invalid itheta returned by suniZTNET",
+          call. = FALSE
+        )
+      }
+
+      ## ntheta is active-set size. Some variables in that active
+      ## set may have returned to exactly zero.
+      keep <- abs(vals) > 0
+
+      df[iz, it] <- sum(keep)
+
+      if (any(keep)) {
+        i.parts[[iz]] <- rows[keep]
+        j.parts[[iz]] <- rep.int(iz, sum(keep))
+        x.parts[[iz]] <- vals[keep]
+      }
+    }
+
+    ii <- as.integer(
+      unlist(i.parts, use.names = FALSE)
+    )
+    jj <- as.integer(
+      unlist(j.parts, use.names = FALSE)
+    )
+    xx <- as.numeric(
+      unlist(x.parts, use.names = FALSE)
+    )
+
+    theta[[it]] <- Matrix::sparseMatrix(
+      i = ii,
+      j = jj,
+      x = xx,
+      dims = c(nvars, nsum),
+      dimnames = list(vnames, sumnames)
+    )
+  }
+
+  ## ntheta from an uncomputed grid point should also not be
+  ## interpreted as a valid active-set size.
+  ntheta[!computed] <- NA_integer_
+
+  list(
+    theta0 = theta0,
+    theta = theta,
+    df = df,
+    dim = c(nvars, nsum, nrate),
+    sum = sum,
+    rate = rate,
+    ntheta = ntheta,
+    napenalty = napenalty,
+    computed = computed,
+    penalty.path = penalty.path
+  )
 }
 
 
@@ -373,6 +1188,124 @@ nonzero <- function(beta, bystep = FALSE) {
       which
     }
   }
+}
+
+theta2gamma <- function(out, betaFIT) {
+  if (is.null(out$theta) || is.null(out$theta0)) {
+    stop("out must contain both 'theta' and 'theta0'.", call. = FALSE)
+  }
+
+  if (!is.list(out$theta) || length(out$theta) == 0L) {
+    stop("out$theta must be a non-empty list of sparse matrices.",
+      call. = FALSE
+    )
+  }
+
+  nvars <- nrow(out$theta[[1L]])
+  ngrid1 <- ncol(out$theta[[1L]])
+  ngrid2 <- length(out$theta)
+
+  beta <- as.numeric(betaFIT$beta[seq_len(nvars)])
+  beta0 <- as.numeric(betaFIT$beta0[seq_len(nvars)])
+
+  if (length(beta) != nvars) {
+    stop("length of betaFIT$beta does not match nvars.", call. = FALSE)
+  }
+
+  if (length(beta0) != nvars) {
+    stop("length of betaFIT$beta0 does not match nvars.", call. = FALSE)
+  }
+
+  if (!all(dim(out$theta0) == c(ngrid1, ngrid2))) {
+    stop(
+      "dimensions of out$theta0 are inconsistent with out$theta.",
+      call. = FALSE
+    )
+  }
+
+  gamma <- vector("list", ngrid2)
+  gamma0 <- out$theta0
+
+  if (!is.null(names(out$theta))) {
+    names(gamma) <- names(out$theta)
+  }
+
+  for (k in seq_len(ngrid2)) {
+    theta_k <- out$theta[[k]]
+
+    if (!inherits(theta_k, "dgCMatrix")) {
+      theta_k <- as(theta_k, "dgCMatrix")
+    }
+
+    if (!all(dim(theta_k) == c(nvars, ngrid1))) {
+      stop(
+        "all elements of out$theta must have the same dimensions.",
+        call. = FALSE
+      )
+    }
+
+    ## ----------------------------------------------------------
+    ## gamma_j = theta_j * beta_j
+    ##
+    ## dgCMatrix stores row index in @i (0-based).
+    ## Therefore each stored nonzero theta can be multiplied
+    ## directly by the corresponding beta without creating
+    ## any dense matrices.
+    ## ----------------------------------------------------------
+    gamma_k <- theta_k
+
+    if (length(theta_k@x) > 0L) {
+      row_idx <- theta_k@i + 1L
+      gamma_k@x <- theta_k@x * beta[row_idx]
+    }
+
+    gamma[[k]] <- Matrix::drop0(gamma_k)
+
+    ## ----------------------------------------------------------
+    ## gamma0 = theta0 + sum_j theta_j * beta0_j
+    ##
+    ## This uses theta, not gamma.
+    ##
+    ## crossprod(beta0, theta_k) returns one value for each
+    ## column / first penalty dimension.
+    ## ----------------------------------------------------------
+    intercept_adjustment <- as.numeric(
+      Matrix::crossprod(beta0, theta_k)
+    )
+
+    gamma0[, k] <- out$theta0[, k] + intercept_adjustment
+  }
+
+  ## ------------------------------------------------------------
+  ## Number of nonzero gamma coefficients for each model
+  ## ------------------------------------------------------------
+  df <- matrix(
+    0L,
+    nrow = ngrid1,
+    ncol = ngrid2,
+    dimnames = dimnames(out$theta0)
+  )
+
+  for (k in seq_len(ngrid2)) {
+    df[, k] <- Matrix::colSums(gamma[[k]] != 0)
+  }
+
+  ## ------------------------------------------------------------
+  ## Preserve the metadata in out, but replace theta objects
+  ## by final gamma objects.
+  ## ------------------------------------------------------------
+  result <- out
+
+  result$gamma0 <- gamma0
+  result$gamma <- gamma
+  result$df <- df
+
+  ## theta/theta0 are intermediate coefficients and are removed
+  ## from the final returned object.
+  result$theta0 <- NULL
+  result$theta <- NULL
+
+  result
 }
 
 

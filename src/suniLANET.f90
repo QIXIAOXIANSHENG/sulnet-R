@@ -72,7 +72,14 @@ SUBROUTINE suniLANET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nlambda,&
     pf3 = MAX(0.0D0, pf3)
     CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
     CALL gridIndexLA(nlambda, nalpha, ulambda, ualpha, ind)
-
+    IF (isd == 1) THEN
+        DO l = 1, nvars
+            IF(ju(l) /= 0)  THEN
+                pf3(l) = pf3(l) / xnorm(l)
+                pf(l) = pf(l) / xnorm(l)
+            END IF
+        END DO
+    END IF
     CALL suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         & pmax, nlambda, nalpha, ulambda, ualpha, eps, maxit, napenalty, theta0, &
         & theta, itheta, ntheta, apenalty, npass, ind, intr, jerr)
@@ -183,7 +190,7 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         mm = 0
         r = y
         ni = 0
-        IF(l > 1) THEN
+        IF(prevz > 0 .AND. prevt > 0) THEN
             ni = ntheta(prevz, prevt)
             t(0) = theta0(1, prevz, prevt)
             r = r - t(0)
@@ -305,8 +312,8 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         IF (ni > 0) theta(1:ni, iz, it) = t(itheta(1:ni, iz, it))
         ntheta(iz, it) = ni
         theta0(1, iz, it) = t(0)
-        apenalty(l, 1) = zeta
-        apenalty(l, 2) = tau
+        apenalty(l, 1) = ulambda(iz)
+        apenalty(l, 2) = ualpha(it)
         napenalty = l
     END DO
     DEALLOCATE (t, oldtheta, mm, r)
