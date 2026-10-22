@@ -1,5 +1,28 @@
-##' @importFrom methods rbind2
-##' @export
+#' Extract coefficients from a testpath fit
+#'
+#' Extract stored coefficients on the input-predictor scale, optionally
+#'   interpolating along the lambda path.
+#'
+#' @details The stored \code{beta} contains the final coefficients, including
+#'   reconstruction from the univariate stage when that stage was used.
+#'
+#' @param object Fitted object inheriting from \code{testpath}.
+#' @param s Lambda values at which to evaluate the path. \code{NULL} uses all
+#'   fitted values. Intermediate values are linearly interpolated and values
+#'   outside the fitted range are clamped to its endpoints.
+#' @param type \code{"coefficients"} returns coefficients; \code{"nonzero"}
+#'   returns one-based indices of nonzero predictor coefficients, excluding the
+#'   intercept.
+#' @param ... Additional arguments, currently unused.
+#'
+#' @return A coefficient matrix. Each matrix has p + 1 rows, with the intercept
+#'   first, and one column per requested lambda. With \code{type = "nonzero"},
+#'   returns lists of predictor indices by path step.
+#' @importFrom methods rbind2
+#' @note Nonzero-index results are computed with apply and may simplify to vectors
+#'   or arrays for small or equally sized selections.
+#' @method coef testpath
+#' @export
 coef.testpath <- function(object, s = NULL, type = c("coefficients", "nonzero"),
                           ...) {
   type <- match.arg(type)

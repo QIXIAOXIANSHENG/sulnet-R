@@ -4,7 +4,7 @@
 ##' @importFrom graphics segments
 ##' @importFrom stats cor lm.fit sd
 #####################################################################
-## These functions are minor modifications or direct copies
+## Some of the functions are minor modifications or direct copies
 ## from the `glmnet` package:
 ##
 ## Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010).
@@ -18,7 +18,7 @@
 
 canvas_structure <- function(number_of_plots) {
   # original function, intended for giving canvas distribution
-  # for S3 plot method for sulnet2D and related.
+  # for S3 plot method for sulnet2D, suni2D and related.
 
   sqrt_result <- sqrt(number_of_plots)
   col <- floor(sqrt_result)
@@ -139,11 +139,11 @@ getmin <- function(lambda, cvm, cvsd) {
 
 getmin2D <- function(pen1, pen2, cvm, cvsd, method) {
   # pen1 <- rev(sort(pen1))
-  npen2 <- rev(sort(pen2))
+  npen2 <- sort(pen2)
   if (!all(pen2 == npen2)) {
     pen2 <- npen2
-    cvm <- cvm[, rev(seq_len(ncol(cvm))), drop = FALSE]
-    cvsd <- cvsd[, rev(seq_len(ncol(cvsd))), drop = FALSE]
+    cvm <- cvm[rev(seq_len(nrow(cvm))), , drop = FALSE]
+    cvsd <- cvsd[rev(seq_len(nrow(cvsd))), , drop = FALSE]
   }
   cvmin <- min(cvm, na.rm = TRUE)
   idmin <- which(cvm <= cvmin, arr.ind = TRUE)
@@ -185,6 +185,33 @@ getmin2D <- function(pen1, pen2, cvm, cvsd, method) {
 
 
 
+#' Unpack a native zeta-tau coefficient grid
+#'
+#' Convert compressed native theta arrays to sparse coefficient matrices and
+#'   preserve grid coordinates and the computed traversal path.
+#'
+#' @details Native arrays are column-major: active coefficients vary fastest,
+#'   then zeta, then tau. Predictor indices in itheta are one-based. Only the
+#'   first napenalty rows of apenalty identify computed grid cells; traversal
+#'   order need not match the rectangular storage order. Invalid counts, indices
+#'   or grid matches stop. Positive native errors stop and negative errors warn
+#'   before partial output is returned. Uncomputed cells have NA intercepts,
+#'   degrees of freedom and active-set counts, but zero sparse slope
+#'   placeholders.
+#'
+#' @param fit List returned by the corresponding native grid solver, including
+#'   grid dimensions and vectors, napenalty, theta0, theta, itheta, ntheta,
+#'   apenalty, and jerr.
+#' @param maxit Pass limit used to format native convergence messages.
+#' @param pmax Leading dimension of the compressed native coefficient arrays.
+#' @param nvars Number of predictors in the full design.
+#' @param vnames Predictor names for coefficient matrix rows.
+#' @return A list containing theta (one nvars by first-grid-length sparse matrix
+#'   per second-coordinate value), theta0 and df matrices, dim, the zeta and tau
+#'   vectors, ntheta, napenalty, a logical computed matrix, and penalty.path.
+#'   Theta coefficients refer to the transformed predictors, before
+#'   reconstruction.
+#' @noRd
 getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
   nzeta <- as.integer(fit$nzeta[1L])
   ntau <- as.integer(fit$ntau[1L])
@@ -494,6 +521,36 @@ getoutput <- function(fit, maxit, pmax, nvars, vnames) {
 }
 
 
+#' Unpack a native lambda-alpha coefficient grid
+#'
+#' Convert compressed native theta arrays to sparse coefficient matrices and
+#'   preserve grid coordinates and the computed traversal path.
+#'
+#' @details Native arrays are column-major: active coefficients vary fastest,
+#'   then lambda, then alpha. Predictor indices in itheta are one-based. Only
+#'   the first napenalty rows of apenalty identify computed grid cells;
+#'   traversal order need not match the rectangular storage order. Invalid
+#'   counts, indices or grid matches stop. Positive native errors stop and
+#'   negative errors warn before partial output is returned. Uncomputed cells
+#'   have NA intercepts, degrees of freedom and active-set counts, but zero
+#'   sparse slope placeholders. The traversal metadata appends zeta = lambda *
+#'   (1 - alpha) and tau = lambda * (2 * alpha - 1); these are the common-factor
+#'   L1 and extra negative-penalty coordinates, not the two native side
+#'   thresholds.
+#'
+#' @param fit List returned by the corresponding native grid solver, including
+#'   grid dimensions and vectors, napenalty, theta0, theta, itheta, ntheta,
+#'   apenalty, and jerr.
+#' @param maxit Pass limit used to format native convergence messages.
+#' @param pmax Leading dimension of the compressed native coefficient arrays.
+#' @param nvars Number of predictors in the full design.
+#' @param vnames Predictor names for coefficient matrix rows.
+#' @return A list containing theta (one nvars by first-grid-length sparse matrix
+#'   per second-coordinate value), theta0 and df matrices, dim, the lambda and
+#'   alpha vectors, ntheta, napenalty, a logical computed matrix, and
+#'   penalty.path. Theta coefficients refer to the transformed predictors,
+#'   before reconstruction.
+#' @noRd
 getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
   nlambda <- as.integer(fit$nlambda[1L])
   nalpha <- as.integer(fit$nalpha[1L])
@@ -773,6 +830,35 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
 }
 
 
+#' Unpack a native sum-rate coefficient grid
+#'
+#' Convert compressed native theta arrays to sparse coefficient matrices and
+#'   preserve grid coordinates and the computed traversal path.
+#'
+#' @details Native arrays are column-major: active coefficients vary fastest,
+#'   then sum, then rate. Predictor indices in itheta are one-based. Only the
+#'   first napenalty rows of apenalty identify computed grid cells; traversal
+#'   order need not match the rectangular storage order. Invalid counts, indices
+#'   or grid matches stop. Positive native errors stop and negative errors warn
+#'   before partial output is returned. Uncomputed cells have NA intercepts,
+#'   degrees of freedom and active-set counts, but zero sparse slope
+#'   placeholders. The traversal metadata appends zeta = sum/(1 + rate) and tau
+#'   = sum * (rate - 1)/(1 + rate); these are the common-factor L1 and extra
+#'   negative-penalty coordinates.
+#'
+#' @param fit List returned by the corresponding native grid solver, including
+#'   grid dimensions and vectors, napenalty, theta0, theta, itheta, ntheta,
+#'   apenalty, and jerr.
+#' @param maxit Pass limit used to format native convergence messages.
+#' @param pmax Leading dimension of the compressed native coefficient arrays.
+#' @param nvars Number of predictors in the full design.
+#' @param vnames Predictor names for coefficient matrix rows.
+#' @return A list containing theta (one nvars by first-grid-length sparse matrix
+#'   per second-coordinate value), theta0 and df matrices, dim, the sum and rate
+#'   vectors, ntheta, napenalty, a logical computed matrix, and penalty.path.
+#'   Theta coefficients refer to the transformed predictors, before
+#'   reconstruction.
+#' @noRd
 getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
   nsum <- as.integer(fit$nsum[1L])
   nrate <- as.integer(fit$nrate[1L])
@@ -1190,6 +1276,22 @@ nonzero <- function(beta, bystep = FALSE) {
   }
 }
 
+#' Reconstruct coefficients on the original predictor scale
+#'
+#' Combine transformed-design coefficients with univariate slopes and offsets.
+#'
+#' @details Uses \eqn{\gamma_j = \beta_j\theta_j} and \eqn{\gamma_0 = \theta_0 +
+#'   \sum_j \beta_{0j}\theta_j}. The intercept adjustment uses theta, not gamma.
+#'   Nonzero counts are recomputed from gamma; consequently zero placeholders at
+#'   uncomputed grid cells are also counted as zero.
+#' @param out Converted grid output with theta as a nonempty list of equally
+#'   sized sparse matrices and theta0 as a first-grid by second-grid matrix.
+#' @param betaFIT First-stage native result containing length-p beta and beta0.
+#' @return The input metadata with theta and theta0 removed, gamma and gamma0
+#'   added in the same grid layout, and df replaced by counts of nonzero gamma.
+#'   Inconsistent coefficient dimensions produce an error.
+#' @noRd
+#' @importFrom methods as
 theta2gamma <- function(out, betaFIT) {
   if (is.null(out$theta) || is.null(out$theta0)) {
     stop("out must contain both 'theta' and 'theta0'.", call. = FALSE)

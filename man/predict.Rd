@@ -3,7 +3,7 @@
 %   R/predict.suni2D.r
 \name{predict}
 \alias{predict}
-\title{Model predictions}
+\title{Predict from a fitted model}
 \usage{
 predict(object, ...)
 
@@ -12,49 +12,24 @@ predict(object, ...)
 predict(object, ...)
 }
 \arguments{
-\item{object}{a model object for which prediction is desired.}
+\item{object}{Fitted model object.}
 
-\item{\dots}{additional arguments affecting the predictions produced.}
+\item{...}{Additional arguments passed to the selected method.}
 }
 \value{
-The form of the value returned by \code{predict} depends on the
-  class of its argument. See the documentation of the particular methods for
-  details of what is produced by that method.
+The value returned by the selected method; see the corresponding
+  class method for coefficient scales and dimensions.
 
-The form of the value returned by \code{predict} depends on the
-  class of its argument. See the documentation of the particular methods for
-  details of what is produced by that method.
+The value returned by the selected method; see the corresponding
+  class method for coefficient scales and dimensions.
 
-The form of the value returned by \code{predict} depends on the
-  class of its argument. See the documentation of the particular methods for
-  details of what is produced by that method.
+The value returned by the selected method; see the corresponding
+  class method for coefficient scales and dimensions.
 }
 \description{
-\code{predict} is a generic function for predictions from the results of
-various model fitting functions. The function invokes particular
-\emph{methods} which depend on the \code{\link{class}} of the first
-argument.
+Dispatch to the method associated with the class of the fitted object.
 
-\code{predict} is a generic function for predictions from the results of
-various model fitting functions. The function invokes particular
-\emph{methods} which depend on the \code{\link{class}} of the first
-argument.
+Dispatch to the method associated with the class of the fitted object.
 
-\code{predict} is a generic function for predictions from the results of
-various model fitting functions. The function invokes particular
-\emph{methods} which depend on the \code{\link{class}} of the first
-argument.
-}
-\seealso{
-\code{\link{predict.sulnet}}, \code{\link{predict.erpath}},
-  \code{\link{predict.lspath}}, \code{\link{predict.hsvmpath}},
-  \code{\link{predict.logitpath}}, \code{\link{predict.sqsvmpath}}.
-
-\code{\link{predict.sulnet}}, \code{\link{predict.erpath}},
-  \code{\link{predict.lspath}}, \code{\link{predict.hsvmpath}},
-  \code{\link{predict.logitpath}}, \code{\link{predict.sqsvmpath}}.
-
-\code{\link{predict.sulnet}}, \code{\link{predict.erpath}},
-  \code{\link{predict.lspath}}, \code{\link{predict.hsvmpath}},
-  \code{\link{predict.logitpath}}, \code{\link{predict.sqsvmpath}}.
+Dispatch to the method associated with the class of the fitted object.
 }

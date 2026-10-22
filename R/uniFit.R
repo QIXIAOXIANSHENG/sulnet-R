@@ -1,16 +1,26 @@
-#' Fitting univariate response
+#' Compute univariate fits using native routines
 #'
-#' @param x Input X matrix of dimension nxp
-#' @param y Input y vector of dimension n
-#' @param loo Logical, whether apply leave one out or not. Default is \code{TRUE}
-#' @param family The family of data, valid options are: \itemize{\item \code{gaussian} The gaussian family for linear regression \item{binomial} The binomial family for logistic regression \item{cox} The cox family for cox regression}
+#' Fit each predictor separately and return full-data coefficients together with
+#'   ordinary or leave-one-out fitted values.
 #'
-#' @returns A list with \begin{\itemize}
-#'  \item{\code{f}} Univariate fitted matrix with same dimension as \code{x}
-#'  \item{\code{beta}} Univariate estimate of each variable
-#'  \item{\code{b0}} Univariate intercept of each variable
-#'  \item{\code{loo}} Logical, whether apply leave one out or not.
+#' @details The native \code{loofit} routine standardizes each nonconstant
+#'   Gaussian predictor, fits its univariate regression and rescales the
+#'   coefficients. Thus the slope is covariance divided by predictor variance.
+#'   The \code{loofit_binom} routine uses iteratively reweighted univariate
+#'   fitting and a leave-one-out adjustment when requested.
 #'
+#' @param x Double-precision numeric n by p matrix; this wrapper does not coerce
+#'   its storage mode.
+#' @param y Length-n double-precision response for Gaussian fitting. For
+#'   binomial fitting, a two-class response; factor-level order determines the
+#'   internal 0/1 coding.
+#' @param loo Whether to return leave-one-out fitted values; default TRUE. The
+#'   returned coefficients are fitted using all observations.
+#' @param family Univariate model: \code{"gaussian"} or \code{"binomial"}.
+#'
+#' @return A list with \code{fitted_values}, an n by p matrix; \code{beta}, a
+#'   length-p slope vector; \code{b0}, a length-p intercept vector; and
+#'   \code{loo}. Binomial fitted values are on the linear-predictor scale.
 #' @examples
 #' set.seed(1)
 #' x <- matrix(rnorm(200), 20, 10)

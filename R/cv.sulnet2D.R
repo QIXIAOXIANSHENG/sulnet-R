@@ -1,84 +1,48 @@
-#' Cross-validation for sulnet2D
+#' Cross-validate a sulnet2D fit
 #'
-#' Does k-fold cross-validation for sulnet, produces a plot, and returns a
-#' value for \code{lambda}. This function is modified based on the \code{cv}
-#' function from the \code{glmnet} package.
+#' Refit the model on training folds and summarize held-out prediction loss over
+#'   its penalty grid.
 #'
-#' The function runs \code{\link{sulnet2D}} \code{nfolds}+1 times; the first to
-#' get the \code{lambda} sequence, and then the remainder to compute the fit
-#' with each of the folds omitted. The average error and standard deviation
-#' over the folds are computed.
+#' @details Fit once on all observations, then once per training fold. Ties at
+#'   the minimum favor the larger second-coordinate value, then the larger
+#'   first-coordinate value. The one-standard-error rule searches the eligible
+#'   region at least as strongly penalized in both coordinates, favoring the
+#'   larger second coordinate first. At least three folds are required.
+#'   The first grid coordinate is the lambda sequence; the second coordinate
+#'   is either alpha or lamPos, depending on the model fit.
 #'
-#' @aliases cv.sulnet cv.hsvmpath cv.sqsvmpath cv.logitpath cv.lspath cv.erpath
+#' @param x Predictor matrix with observations in rows and predictors in
+#'   columns; coerced to a dense matrix by the fitting function.
+#' @param y Response with one observation per row of \code{x}.
+#' @param lambda Optional lambda grid passed to the full-data fit; the resulting
+#'   fitted grid is reused in each fold.
+#' @param alpha Alpha grid passed to \code{sulnet2D}, including that
+#'   function's rescaling rules. Use \code{NULL} for lamPos-based
+#'   fitting. When set to \code{NULL}, include a \code{lamPos} grid in the
+#'   \code{...} arguments to \code{sulnet2D}.
+#' @param pred.loss Prediction loss selector. When omitted, the scoring routine
+#'   chooses its default. Gaussian paths use squared error, logistic paths use
+#'   \code{"loss"} or \code{"misclass"}, and Cox scoring uses deviance.
+#' @param nfolds Number of folds when \code{foldid} is omitted; default 5.
+#' @param foldid Optional length-n vector of fold labels in 1 through the number
+#'   of folds. Its maximum replaces \code{nfolds}. Otherwise labels are randomly
+#'   sampled with approximately equal fold sizes.
+#' @param ... Additional arguments passed to \code{sulnet2D} for the full-data
+#'   and training-fold fits.
 #'
-#' @param x \code{x} matrix as in \code{\link{sulnet2D}}.
-#' @param y response variable or class label \code{y} as in
-#'   \code{\link{sulnet}}.
-#' @param lambda optional user-supplied lambda sequence; default is
-#'   \code{NULL}, and \code{\link{sulnet}} chooses its own sequence.
-#' @param alpha alpha.
-#' @param nfolds number of folds - default is 5. Although \code{nfolds} can be
-#'   as large as the sample size (leave-one-out CV), it is not recommended for
-#'   large datasets. Smallest value allowable is \code{nfolds=3}.
-#' @param foldid an optional vector of values between 1 and \code{nfold}
-#'   identifying what fold each observation is in. If supplied, \code{nfold}
-#'   can be missing.
-#' @param pred.loss loss function to use for cross-validation error. Valid
-#'   options are: \itemize{ \item \code{"loss"} Margin based loss function.
-#'   When use least square loss \code{"ls"}, it gives mean square error (MSE).
-#'   When use expectile regression loss \code{"er"}, it gives asymmetric mean
-#'   square error (AMSE). \item \code{"misclass"} only available for
-#'   classification: it gives misclassification error. } Default is
-#'   \code{"loss"}.
-#' @param \dots other arguments that can be passed to sulnet.
-#' @return an object of class \code{\link{cv.sulnet}} is returned, which is a
-#'   list with the ingredients of the cross-validation fit. \item{lambda}{the
-#'   values of \code{lambda} used in the fits.} \item{cvm}{the mean
-#'   cross-validated error - a vector of length \code{length(lambda)}.}
-#'   \item{cvsd}{estimate of standard error of \code{cvm}.}
-#'   \item{cvupper}{upper curve = \code{cvm+cvsd}.} \item{cvlower}{lower curve
-#'   = \code{cvm-cvsd}.} \item{nzero}{number of non-zero coefficients at each
-#'   \code{lambda}.} \item{name}{a text string indicating type of measure (for
-#'   plotting purposes).} \item{sulnet.fit}{a fitted \code{\link{sulnet}}
-#'   object for the full data.} \item{lambda.min}{The optimal value of
-#'   \code{lambda} that gives minimum cross validation error \code{cvm}.}
-#'   \item{lambda.1se}{The largest value of \code{lambda} such that error is
-#'   within 1 standard error of the minimum.}
-#' @author Yi Yang, Yuwen Gu and Hui Zou\cr Maintainer: Yi Yang
-#'   <yi.yang6@mcgill.ca>
-#' @seealso \code{\link{sulnet}}, \code{\link{plot.cv.sulnet}},
-#'   \code{\link{predict.cv.sulnet}}, and \code{\link{coef.cv.sulnet}} methods.
-#' @references Yang, Y. and Zou, H. (2012).
-#'   "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-#'   \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-#'   BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-#'
-#'   Gu, Y., and Zou, H. (2016).
-#'   "High-dimensional generalizations of asymmetric least squares regression and their applications."
-#'   \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-#'
-#'   Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-#'   "Regularization paths for generalized linear models via coordinate descent."
-#'   \emph{Journal of Statistical Software, 33, 1.}\cr
-#'   \url{https://www.jstatsoft.org/v33/i01/}
-#' @keywords models regression
+#' @return A list of class \code{cv.sulnet2D} with the penalty grid, \code{cvm}
+#'   (mean held-out loss), \code{cvsd} (standard error), \code{cvupper},
+#'   \code{cvlower}, \code{name}, \code{sulnet2D.fit}, and the selected pairs
+#'   \code{cv.min} and \code{cv.1se}. Loss matrices have second-coordinate
+#'   values in rows and first-coordinate values in columns. Also includes
+#'   \code{nzero}.
 #' @examples
-#'
-#' # fit an elastic net penalized HHSVM with lambda2 = 0.1 for the L2 penalty.
-#' # Use the misclassification rate as the cross validation prediction loss.
-#' # Use five-fold CV to choose the optimal lambda for the L1 penalty.
 #' set.seed(1)
-#' x <- matrix(rnorm(2000), 200, 10)
-#' beta <- rep(c(1, 0), each = c(5, 5))
-#' y <- x %*% beta + rnorm(200, 0, 0.1)
-#' # 1. solution paths for the LASSO penalized least squares.
-#' # To use LASSO set lambda2 = 0.
-#'
-#' set.seed(2011)
-#' cv1 <- cv.sulnet2D(x, y)
-#' plot(cv1)
-#'
-
+#' nobs <- as.integer(100)
+#' nvars <- as.integer(20)
+#' x <- matrix(rnorm(nobs * nvars), nobs, nvars)
+#' y <- rnorm(nobs)
+#' cvfit <- cv.sulnet2D(x, y, nfolds = 5)
 #'
 #' @export
 cv.sulnet2D <- function(x, y, lambda = NULL, alpha = seq(0.01, 0.99, length.out = 21),

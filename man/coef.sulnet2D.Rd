@@ -2,82 +2,29 @@
 % Please edit documentation in R/coef.sulnet2D.R
 \name{coef.sulnet2D}
 \alias{coef.sulnet2D}
-\alias{coef.sulnet}
-\alias{coef.hsvmpath}
-\alias{coef.sqsvmpath}
-\alias{coef.logitpath}
-\alias{coef.lspath}
-\alias{coef.erpath}
-\title{Get coefficients or make coefficient predictions from a "sulnet" object.}
+\title{Extract coefficients from a sulnet2D model}
 \usage{
 \method{coef}{sulnet2D}(object, s = NULL, type = c("coefficients", "nonzero"), ...)
 }
 \arguments{
-\item{object}{fitted \code{\link{sulnet}} model object.}
+\item{object}{Object inheriting from \code{sulnet2D}.}
 
-\item{s}{value(s) of the penalty parameter \code{lambda} at which
-predictions are required. Default is the entire sequence used to create
-the model.}
+\item{s}{Lambda values at which to evaluate the path. \code{NULL} uses all
+fitted values. Intermediate values are linearly interpolated and values
+outside the fitted range are clamped to its endpoints.}
 
-\item{type}{type \code{"coefficients"} computes the coefficients at the
-requested values for \code{s}. Type \code{"nonzero"} returns a list of the
-indices of the nonzero coefficients for each value of \code{s}. Default is
-\code{"coefficients"}.}
+\item{type}{Coefficient output requested from the next method:
+\code{"coefficients"} or \code{"nonzero"}.}
 
-\item{\dots}{not used. Other arguments to predict.}
+\item{...}{Additional arguments passed to the next coefficient method.}
 }
 \value{
-The object returned depends on type.
+The next method's result: a list of coefficient matrices, or
+  nonzero-index lists. List names are from the second penalty values of the
+  \code{sulnet2D} object (\code{alpha} or \code{lamPos}). Intercepts, when
+  present, occupy the first row. Coefficient scale and grid selection
+  follow the path method.
 }
 \description{
-Computes the coefficients or returns a list of the indices of the nonzero
-coefficients at the requested values for \code{lambda} from a fitted
-\code{\link{sulnet}} object.
+Delegate coefficient extraction to the next path class in the fitted object.
 }
-\details{
-\code{s} is the new vector at which predictions are requested. If \code{s}
-is not in the lambda sequence used for fitting the model, the \code{coef}
-function will use linear interpolation to make predictions. The new values
-are interpolated using a fraction of coefficients from both left and right
-\code{lambda} indices.
-}
-\examples{
-
-set.seed(1)
-x <- matrix(rnorm(2000), 200, 10)
-beta <- rep(c(1, 0), 5)
-y <- x \%*\% beta + rnorm(200, 0, 0.1)
-# 1. solution paths for the LASSO penalized least squares.
-# To use LASSO set lambda2 = 0.
-
-set.seed(2011)
-cv1 <- cv.sulnet2D(x, y)
-coef(cv1, type = "coef", s = "cv.min")
-coef(cv1, type = "nonzero")
-
-}
-\references{
-Yang, Y. and Zou, H. (2012).
-  "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-  \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-  BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-
-  Gu, Y., and Zou, H. (2016).
-  "High-dimensional generalizations of asymmetric least squares regression and their applications."
-  \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-
-  Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-  "Regularization paths for generalized linear models via coordinate descent."
-  \emph{Journal of Statistical Software, 33, 1.}\cr
-  \url{https://www.jstatsoft.org/v33/i01/}
-}
-\seealso{
-\code{\link{predict.sulnet}} method
-}
-\author{
-Yi Yang, Yuwen Gu and Hui Zou\cr
-
-  Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-}
-\keyword{models}
-\keyword{regression}

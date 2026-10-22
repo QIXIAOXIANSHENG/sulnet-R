@@ -2,7 +2,7 @@
 % Please edit documentation in R/uniInfo_unilasso.R
 \name{uniInfo}
 \alias{uniInfo}
-\title{Create the univariate info for use in uniLasso}
+\title{Compute univariate coefficients and optional leave-one-out predictions}
 \usage{
 uniInfo(
   X,
@@ -16,30 +16,48 @@ uniInfo(
 )
 }
 \arguments{
-\item{X}{An n x p feature matrix}
+\item{X}{Numeric n by p feature matrix. Constant columns are removed before
+fitting and restored as zeros; an entirely constant design is rejected.}
 
-\item{y}{A response object, depending on the family. For "gaussian" it is just a response vector. For "binomial" either a binary vector, a two level factor, or a two column non-negative matrix with rows summing to 1. For "cox" it is a Surv object (currently for right censored data).}
+\item{y}{Gaussian response vector; a binary vector, two-level factor, or
+two-column binomial response matrix; or a right-censored survival response
+with time and status columns for Cox fitting.}
 
-\item{family}{one of "gaussian","binomial" or "cox". Currently only these families are implemented. In the future others
-will be added.}
+\item{family}{One of \code{"gaussian"}, \code{"binomial"}, or \code{"cox"}.}
 
-\item{weights}{Vector of non-negative weights. Default is NULL, which results in all weights equal to 1.}
+\item{weights}{Observation weights, normalized to sum to one. \code{NULL}
+gives equal weights. Binomial matrix row totals additionally multiply these
+weights.}
 
-\item{nit}{Number of iterations if Newton steps are required (in "binomial" and "cox"). Default is 2. In principal more is better, but in some cases can run into convergence issues.}
+\item{nit}{Number of weighted least-squares updates for binomial or Cox
+fitting, including initialization; default 2. Gaussian fitting does not use
+this argument.}
 
-\item{loo}{A logical, default=FALSE. If TRUE it computes the matrix of loo fits F.}
+\item{loo}{Whether to include an n by p matrix of leave-one-out predictions;
+default FALSE. Binomial and Cox adjustments use the fitted working
+responses and curvature.}
 
-\item{ridge}{A positive number that penalizes the square of the slope parameters. This is useful if some of the variables are nearly constant, or have very small variances. Default is 0.0.}
+\item{ridge}{Slope regularization added to the weighted predictor sum of
+squares; default zero.}
 
-\item{eps}{A small number to regularize the hessian for "cox"; default is 1e-6.}
+\item{eps}{Lower bound used for the Cox curvature in working-response
+updates; default 1e-6.}
 }
 \value{
-a list with components \code{$beta} and \code{$beta0}, and if \code{loo=TRUE}, a n x p matrix \code{F} with the loo fits.
+A list containing length-p vectors \code{beta} and \code{beta0}. When
+  \code{loo = TRUE}, \code{F} is an n by p prediction matrix on the
+  linear-predictor scale. Cox intercepts are zero. Restored constant columns
+  have zero coefficients and zero entries in \code{F}.
 }
 \description{
-Fit p separate univariate fits,  and if requested computes the loo fit matrix F.
-It is called internally by \code{uniLasso}, or can be called externally on separate data and passed as input to \code{uniLasso}.
-Currently this function can accommodate "gaussian", "binomial", and "Cox" families.
+Fit one weighted regression per predictor for Gaussian, binomial, or
+  right-censored Cox responses.
+}
+\details{
+Gaussian slopes use centered, weighted cross-products divided by the
+  weighted predictor sum of squares plus ridge. Cox fitting uses no intercept
+  and aggregates tied event times. This function computes univariate
+  information only; it does not fit a penalized second stage.
 }
 \examples{
 # Gaussian model

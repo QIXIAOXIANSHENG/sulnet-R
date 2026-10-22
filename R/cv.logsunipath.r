@@ -1,4 +1,28 @@
-##' @export
+#' Score held-out predictions for logsunipath paths
+#'
+#' Aggregate validation losses from already fitted training-fold models.
+#'
+#' @details Missing predictions from truncated paths are omitted from the loss
+#'   averages and standard-error calculations.
+#'
+#' @param outlist List of fitted training-fold models, indexed by fold number.
+#' @param lambda Full-data lambda vector defining the output columns.
+#' @param alpha Second-coordinate values defining output rows; these may be
+#'   alpha or lamPos values.
+#' @param x Full predictor matrix in the same observation order as the fold
+#'   labels.
+#' @param y Response for all observations; logistic responses are converted to
+#'   two factor levels.
+#' @param foldid Length-n vector of fold labels, numbered consecutively from 1.
+#' @param pred.loss \code{"loss"} for twice the logistic negative log likelihood
+#'   or \code{"misclass"} for classification error; \code{"default"} selects
+#'   loss.
+#' @param delta Unused compatibility argument; it may be omitted.
+#'
+#' @return A list containing \code{cvm}, \code{cvsd}, and the loss label
+#'   \code{name}. The first two components are matrices with second-coordinate
+#'   values in rows and lambda values in columns.
+#' @export
 cv.logsunipath <- function(outlist, lambda, alpha, x, y, foldid, pred.loss, delta){
     typenames <- c(misclass = "Misclassification Error", loss = "Margin Based Loss")
     if (pred.loss == "default")

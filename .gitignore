@@ -9,4 +9,4 @@ src/*.dll
 inst/cox tryout.RData
 .Rhistory
 cgseppath.r
-plot.cv.sulnet2D.r
+inst/agent/AGENTS.md

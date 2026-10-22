@@ -1,4 +1,27 @@
-##' @export
+#' Score held-out predictions for coxsunipath paths
+#'
+#' Aggregate validation losses from already fitted training-fold models.
+#'
+#' @details Cox scoring uses grouped partial-likelihood deviance and
+#'   path-specific lambda sequences.
+#'
+#' @param outlist List of fitted training-fold models, indexed by fold number.
+#' @param lambda Full-data lambda vector defining the output columns.
+#' @param alpha Second-coordinate values defining output rows; these may be
+#'   alpha or lamPos values.
+#' @param x Full predictor matrix in the same observation order as the fold
+#'   labels.
+#' @param y Right-censored survival response for all observations.
+#' @param foldid Length-n vector of fold labels, numbered consecutively from 1.
+#' @param pred.loss Loss selector; \code{"default"} selects deviance and other
+#'   unsupported values are replaced by \code{"deviance"} with a warning.
+#' @param sulnet2D.obj Full-data fit providing the path-specific
+#'   \code{lambdamat}, coefficient dimensions, and degrees of freedom.
+#'
+#' @return A list containing \code{cvm}, \code{cvsd}, and the loss label
+#'   \code{name}. The first two components are matrices with second-coordinate
+#'   values in rows and lambda values in columns.
+#' @export
 cv.coxsunipath <- function(outlist, lambda, alpha, x, y, foldid, pred.loss, sulnet2D.obj) {
     weights <- rep(1, nrow(x))
     typenames <- c(deviance = "Deviance")

@@ -2,57 +2,27 @@
 % Please edit documentation in R/plot.cv.sulnet2D.R
 \name{plot.cv.sulnet2D}
 \alias{plot.cv.sulnet2D}
-\title{Plot the cross-validation curve produced by cv.sulnet}
+\title{Plot a two-dimensional cross-validation surface for
+  a \code{cv.sulnet2D} object.}
 \usage{
 \method{plot}{cv.sulnet2D}(x, ...)
 }
 \arguments{
-\item{x}{fitted \code{\link{cv.sulnet2D}} object}
+\item{x}{A \code{cv.sulnet2D} object.}
 
-\item{\dots}{other graphical parameters to plotly}
+\item{...}{Additional arguments passed to \code{plotly::plot_ly} in the
+surface branch; unused by the single-curve branch.}
+}
+\value{
+For a surface, prints and invisibly returns a plotly widget. For a
+  curve, draws a base graphics plot and invisibly returns \code{NULL}.
 }
 \description{
-Plots the cross-validation surface, and upper and lower standard deviation
-surface.
+Show the mean validation loss, plus and minus one standard error, and the
+  selected penalty pairs. Use a curve when there is only one
+  second-coordinate value.
 }
 \details{
-A plotly object is returned.
+The horizontal axis is log lambda and the second axis is alpha or
+  lamPos.
 }
-\examples{
-
-# fit an elastic net penalized logistic regression with lambda2 = 1 for the
-# L2 penalty. Use the logistic loss as the cross validation prediction loss.
-# Use five-fold CV to choose the optimal lambda for the L1 penalty.
-set.seed(1)
-x <- matrix(rnorm(2000), 200, 10)
-beta <- rep(c(1, 0), 5)
-y <- x \%*\% beta + rnorm(200, 0, 0.1)
-cv <- cv.sulnet2D(x = x, y = y)
-plot(cv)
-
-}
-\references{
-Yang, Y. and Zou, H. (2012).
-  "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-  \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-  BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-
-  Gu, Y., and Zou, H. (2016).
-  "High-dimensional generalizations of asymmetric least squares regression and their applications."
-  \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-
-  Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-  "Regularization paths for generalized linear models via coordinate descent."
-  \emph{Journal of Statistical Software, 33, 1.}\cr
-  \url{https://www.jstatsoft.org/v33/i01/}
-}
-\seealso{
-\code{\link{cv.sulnet2D}}.
-}
-\author{
-Yi Yang, Yuwen Gu and Hui Zou\cr
-
-Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-}
-\keyword{models}
-\keyword{regression}

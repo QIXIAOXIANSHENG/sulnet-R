@@ -1,3 +1,7 @@
+! Fit a sum-rate grid on the supplied transformed predictor matrix.
+! Apply exclusions and optional centering/scaling, then restore theta to the
+! input scale. Compressed arrays use (active slot, sum index, rate index);
+! apenalty records traversal and napenalty counts completed grid fits.
 SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nsum,&
 & nrate, usum, urate, eps, isd, intr, maxit, napenalty, theta0, &
 & theta, itheta, ntheta, apenalty, npass, jerr)
@@ -105,6 +109,9 @@ SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nsum,&
 END SUBROUTINE suniSRNET
 
 
+! Coordinate updates with separate positive and negative thresholds:
+! sum/(1+rate)*pf and sum*rate/(1+rate)*pf3. Warm starts use the predecessor
+! in ind; the quadratic coordinate denominator adds lam2*pf2.
 SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     & pmax, nsum, nrate, usum, urate, eps, maxit, napenalty, theta0, theta, &
     & itheta, ntheta, apenalty, npass, ind, intr, jerr)

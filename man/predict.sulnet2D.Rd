@@ -2,84 +2,43 @@
 % Please edit documentation in R/predict.sulnet2D.R
 \name{predict.sulnet2D}
 \alias{predict.sulnet2D}
-\alias{predict.sulnet}
-\alias{predict.hsvmpath}
-\alias{predict.sqsvmpath}
-\alias{predict.logitpath}
-\alias{predict.lspath}
-\alias{predict.erpath}
-\title{Make predictions from a "sulnet" object}
+\title{Predict from a sulnet2D model}
 \usage{
-\method{predict}{sulnet2D}(object, newx, s = NULL, type = c("class", "link"), ...)
+\method{predict}{sulnet2D}(object, newx, s = NULL, type = c("class", "link", "response"), ...)
 }
 \arguments{
-\item{object}{fitted \code{\link{sulnet}} model object.}
+\item{object}{Object inheriting from \code{sulnet2D}.}
 
-\item{newx}{matrix of new values for \code{x} at which predictions are to be
-made. NOTE: \code{newx} must be a matrix, \code{predict} function does not
-accept a vector or other formats of \code{newx}.}
+\item{newx}{Predictor matrix for new observations, with the same columns and
+order as the training predictors and no intercept column.}
 
-\item{s}{value(s) of the penalty parameter \code{lambda} at which
-predictions are required. Default is the entire sequence used to create
-the model.}
+\item{s}{Lambda values at which to evaluate the path. \code{NULL} uses all
+fitted values. Intermediate values are linearly interpolated and values
+outside the fitted range are clamped to its endpoints.}
 
-\item{type}{type of prediction required. \itemize{ \item Type \code{"link"}
-gives the linear predictors for classification problems and gives
-predicted response for regression problems. \item Type \code{"class"}
-produces the class label corresponding to the maximum probability. Only
-available for classification problems.}}
+\item{type}{Prediction type forwarded to the next method. Available choices
+depend on the path class: Gaussian paths accept \code{"link"}, logistic
+paths also accept \code{"class"}, and Cox paths accept \code{"link"} or
+\code{"response"}.}
 
-\item{\dots}{Not used. Other arguments to predict.}
+\item{...}{Additional arguments passed to the next prediction method.}
 }
 \value{
-The object returned depends on type.
+The next prediction method's result, usually a matrix or a
+  list of matrices with observations in rows and selected path values in
+  columns.
 }
 \description{
-Similar to other predict methods, this functions predicts fitted values and
-class labels from a fitted \code{\link{sulnet}} object.
-}
-\details{
-\code{s} is the new vector at which predictions are requested. If \code{s}
-is not in the lambda sequence used for fitting the model, the
-\code{predict} function will use linear interpolation to make predictions.
-The new values are interpolated using a fraction of predicted values from
-both left and right \code{lambda} indices.
+Delegate prediction to the next path class in the fitted object.
 }
 \examples{
-
 set.seed(1)
-x <- matrix(rnorm(200), 20, 10)
-beta <- rep(c(1, 0), 5)
-y <- x \%*\% beta + rnorm(20, 0, 0.1)
-# 1. solution paths for the LASSO penalized least squares.
-# To use LASSO set lambda2 = 0.
-
-m1 <- sulnet2D(x = x, y = y)
-predict(m1, newx = matrix(rnorm(200), 20, 10))
+nobs <- as.integer(100)
+nvars <- as.integer(20)
+x <- matrix(rnorm(nobs * nvars), nobs, nvars)
+y <- rnorm(nobs)
+fit <- sulnet2D(x, y)
+newx <- matrix(rnorm(nobs * nvars), nobs, nvars)
+predict(fit, newx)
 
 }
-\references{
-Yang, Y. and Zou, H. (2012).
-  "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-  \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-  BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-
-  Gu, Y., and Zou, H. (2016).
-  "High-dimensional generalizations of asymmetric least squares regression and their applications."
-  \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-
-  Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-  "Regularization paths for generalized linear models via coordinate descent."
-  \emph{Journal of Statistical Software, 33, 1.}\cr
-  \url{https://www.jstatsoft.org/v33/i01/}
-}
-\seealso{
-\code{\link{coef}} method
-}
-\author{
-Yi Yang, Yuwen Gu and Hui Zou\cr
-
-Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-}
-\keyword{models}
-\keyword{regression}

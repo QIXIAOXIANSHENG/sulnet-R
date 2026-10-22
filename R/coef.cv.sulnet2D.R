@@ -1,61 +1,23 @@
-#' Get coefficients or make coefficient predictions from a "cv.sulnet" object.
+#' Extract coefficients at cross-validated penalties for a
+#'   \code{cv.sulnet2D} object.
 #'
-#' This function gets coefficients or makes coefficient predictions from a
-#' cross-validated sulnet model, using the stored \code{"sulnet.fit"} object,
-#' and the optimal value chosen for \code{lambda}.
+#' Use the penalty selection stored by cross-validation to query the full-data
+#'   model.
 #'
-#' This function makes it easier to use the results of cross-validation to get
-#' coefficients or make coefficient predictions.
+#' @details Both coordinates of the selected penalty pair are evaluated using
+#'   the full-data fit.
 #'
-#' @param object fitted \code{\link{cv.sulnet}} object.
-#' @param s value(s) of the penalty parameter \code{lambda} at which
-#'   predictions are required. Default is the value \code{s="lambda.1se"}
-#'   stored on the CV \code{object}, it is the largest value of \code{lambda}
-#'   such that error is within 1 standard error of the minimum. Alternatively
-#'   \code{s="lambda.min"} can be used, it is the optimal value of
-#'   \code{lambda} that gives minimum cross validation error \code{cvm}. If
-#'   \code{s} is numeric, it is taken as the value(s) of \code{lambda} to be
-#'   used.
-#' @param \dots not used. Other arguments to predict.
+#' @param object Cross-validation object of class \code{cv.sulnet2D}.
+#' @param s \code{"cv.1se"} (default) or \code{"cv.min"}, selecting the stored
+#'   penalty pair. Numeric input is not accepted.
+#' @param ... Additional arguments passed to the fitted model's coef
+#'   method.
 #'
-#' @return The object returned depends the \dots{} argument which is passed on
-#'   to the \code{\link{predict}} method for \code{\link{sulnet}} objects.
-#'
-#' @author Yi Yang, Yuwen Gu and Hui Zou\cr
-#'
-#'   Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-#'
-#' @seealso \code{\link{cv.sulnet}}, and \code{\link{predict.cv.sulnet}}
-#'   methods.
-#'
-#' @references Yang, Y. and Zou, H. (2012).
-#'   "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-#'   \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-#'   BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-#'
-#'   Gu, Y., and Zou, H. (2016).
-#'   "High-dimensional generalizations of asymmetric least squares regression and their applications."
-#'   \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-#'
-#'   Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-#'   "Regularization paths for generalized linear models via coordinate descent."
-#'   \emph{Journal of Statistical Software, 33, 1.}\cr
-#'   \url{https://www.jstatsoft.org/v33/i01/}
-#'
-#' @keywords models regression
-#'
-#' @examples
-#'
-#' set.seed(1)
-#' x <- matrix(rnorm(2000), 200, 10)
-#' beta <- rep(c(1, 0), 5)
-#' y <- x %*% beta + rnorm(200, 0, 0.1)
-#' # 1. solution paths for the LASSO penalized least squares.
-#' # To use LASSO set lambda2 = 0.
-#'
-#' cv <- cv.sulnet2D(x = x, y = y)
-#' coef(cv, s = "cv.min")[[1]]
-#'
+#' @return A list with the fitted model' coefficients. Names of the list is the
+#'   corresponding \code{alpha} or \code{lamPos} value of \code{s}. Coefficient
+#'   matrices include an intercept first when the model has one; nonzero output
+#'   excludes intercepts.
+#' @method coef cv.sulnet2D
 #' @export
 coef.cv.sulnet2D <- function(object, s = c("cv.1se", "cv.min"), ...) {
   if (is.character(s)) {

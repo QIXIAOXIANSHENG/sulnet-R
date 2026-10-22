@@ -1,3 +1,28 @@
+#' Score held-out predictions for sunipath fits
+#'
+#' Aggregate squared-error validation losses from already fitted training-fold
+#' models over a two-dimensional penalty grid.
+#'
+#' @details Missing predictions from truncated paths are omitted from the loss
+#'   averages and standard-error calculations.
+#'
+#' @param outlist List of fitted training-fold models, indexed by fold number.
+#' @param method Character string naming the two penalty coordinates, separated
+#'   by an underscore (for example, \code{"lambda_alpha"}).
+#' @param pen List containing the two full-data penalty vectors. The first
+#'   vector defines output columns and the second defines output rows.
+#' @param x Full predictor matrix in the same observation order as the fold
+#'   labels.
+#' @param y Numeric response for all observations.
+#' @param foldid Length-n vector of fold labels, numbered consecutively from 1.
+#' @param pred.loss Loss selector; \code{"default"} selects squared error and
+#'   unsupported values fall back to \code{"loss"} with a warning.
+#'
+#' @return A list containing \code{cvm}, \code{cvsd}, and the loss label
+#'   \code{name}. The first two components are matrices with second-coordinate
+#'   values in rows and first-coordinate values in columns.
+#'
+#' @export
 cv.sunipath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
   typenames <- c(
     misclass = "Misclassification Error",

@@ -1,37 +1,33 @@
-#' A testing code for conducting transfer learning
+#' Fit a transfer model using source and target univariate fits
 #'
-#' @description
-#' A short description...
+#' Construct transformed predictors from target and source samples, fit a
+#'   penalized second stage, and reconstruct coefficients for the original
+#'   predictors.
 #'
+#' @details The native routines \code{loofit_ts}, \code{loofit_s}, and
+#'   \code{loofit_st} produce the univariate transformation. Reconstruction
+#'   multiplies each second-stage slope by its first-stage slope and adds the
+#'   weighted first-stage intercepts to the second-stage intercept. The returned
+#'   class differs from the class vector of a regular \code{sulnet2D} fit.
 #'
-#' @param d0 Target data, a list of two objects \code{x} and \code{y}
-#' @param dA Source data, a list of all source data. Each source data should have the same
-#'  structure as \code{d0}.
-#' @param method Transferring method, default is \code{"suni_tsloo"}.
-#' @param loo Using LOO or not, default is \code{TRUE}.
-#' @param ... optional arguments to function \code{sulnet2D}.
+#' @param d0 Target data list with predictor matrix \code{x} and response vector
+#'   \code{y}.
+#' @param dA Nonempty list of source data lists with \code{x} and \code{y}. Each
+#'   source must have the same predictor columns and ordering as the target.
+#' @param method Univariate transfer routine: \code{"suni_tsloo"} uses combined
+#'   rows in the second stage, \code{"suni_sloo"} uses target rows from the
+#'   combined-data transformation, and \code{"suni_s"} constructs target
+#'   predictions from source fits.
+#' @param loo Leave-one-out flag passed to the first two transfer routines;
+#'   unused by \code{"suni_s"}.
+#' @param ... Arguments passed to \code{sulnet2D}. The wrapper sets \code{x},
+#'   \code{y}, and \code{negOnly = TRUE}.
 #'
-#' @returns A S3 class same as what \code{sulnet2D} with \code{negOnly = TRUE} would return.
+#' @return The second-stage list with \code{beta} and \code{b0} replaced by
+#'   reconstructed coefficient and intercept lists. \code{fbeta} and \code{fb0}
+#'   retain the second-stage coefficients. The returned class is the single
+#'   string \code{"sulnet2D.sunipath_2"}.
 #' @export
-#'
-#' @examples
-#' n <- 20
-#' p <- 10
-#' beta <- runif(p)
-#' nA <- 5
-#' x <- matrix(rnorm(n * p), nrow = n)
-#' d0 <- list(
-#'   x = x,
-#'   y = x %*% beta
-#' )
-#' dA <- lapply(seq(nA), function(a) {
-#'   x <- matrix(rnorm(n * p), nrow = n)
-#'   list(
-#'     x = x,
-#'     y = x %*% (beta + rnorm(p, 0, 0.05))
-#'   )
-#' })
-#' fit <- transulnet(d0, dA)
 transulnet <- function(d0, dA, method = c("suni_tsloo", "suni_sloo", "suni_s"), loo = TRUE,
                        ...) {
   ################################################################################

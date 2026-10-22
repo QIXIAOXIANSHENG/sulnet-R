@@ -138,7 +138,7 @@ rate = NULL
 beta = NULL
 N <- nrow(x)
 y <- drop(y)
-method = "zeta_tau"
+method <- "lambda_alpha"
 lambda2 = 0
 y <- drop(y)
 x <- as.matrix(x)
@@ -195,6 +195,12 @@ if (!is.null(beta)) {
   beta_ju <- integer(nvars)
   beta <- double(nvars)
 }
+pmax = nvars
+standardize = TRUE
+intercept = TRUE
+eps <- 1e-08
+maxit = 1e+05
+family = "gaussian"
 lam2 <- as.double(lambda2)
 pf <- as.double(pf)
 pf2 <- as.double(pf2)
@@ -204,12 +210,6 @@ intr <- as.integer(intercept)
 eps <- as.double(eps)
 pmax <- as.integer(pmax)
 maxit <- as.integer(maxit)
-pmax = nvars
-standardize = TRUE
-intercept = TRUE
-eps <- 1e-08
-maxit = 1e+05
-family = "gaussian"
 jd <- as.integer(0)
 lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04)
 if (method == "zeta_tau") {
@@ -364,6 +364,24 @@ if (method == "lambda_alpha") {
     nalpha <- as.integer(length(ualpha))
   }
 }
+y <- as.double(y)
+storage.mode(x) <- "double"
+medpj <- median(abs(beta[beta_ju != 0]))
+if (is.na(medpj)) medpj <- as.double(1)
+betaFIT <- .Fortran("betaFIT", as.integer(nobs), as.integer(nvars), x, y, beta0 = double(nvars), beta = beta, beta_ju, medpj, fit = double(nobs * nvars), PACKAGE = "sulnet")
+f <- matrix(betaFIT$fit, nobs, nvars)
+storage.mode(f) <- "double"
+lam <- getlaR(nobs, nvars, nzeta, ntau, f, y, uzeta, utau, pf, flminz, flmint, isd, intr)
+getzt <- .Fortran(
+  "getzt", nobs, nvars, nzeta, ntau,
+  uzeta = uzeta, utau = utau,
+  f, y, pf, flminz, flmint, isd, intr,
+  diffz = double(1), difft = double(1),
+  PACKAGE = "sulnet"
+)
+
+
+
 fit <- switch(method,
   zeta_tau = suniZTpath(
     x, y, nzeta, ntau, flminz, flmint, uzeta,
@@ -386,7 +404,7 @@ fit <- switch(method,
 suni2D.object <- suni2D(x, y,
   zeta = zeta, tau = tau,
   lambda = lambda, alpha = alpha, sum = sum, rate = rate,
-  method = method # , nzeta = nzeta, ntau = ntau
+  method = method # , nzeta = nzeta, ntau = ntau, nlambda = nlambda, nalpha = nalpha, nsum = nsum, nrate = nrate,
 )
 method <- suni2D.object$use
 pen <- getpenalty(suni2D.object)
@@ -424,20 +442,31 @@ out <- list(setNames(pen, strsplit(method, "_")[[1]]),
 cvfitzt <- cv.suni2D(x, y)
 cvfitzt$cv.min
 cvfitzt$cv.1se
+coef(cvfitzt, s = "cv.min")
+cvfitsr <- cv.suni2D(x, y, method = "sum_rate")
+cvfitla <- cv.suni2D(x, y, method = "lambda_alpha")
+plot(cvfitzt)
+plot(cvfitla, "zeta_tau")
+plot(cvfitla)
+plot(cvfitsr)
+plot(cvfitsr, "zeta_tau")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <- sulnet2D(x, y, method = "septhresh", nlambda = 10, lamPos = c(3, 2, 1), alpha = NULL)
+fitzt <- suni2D(x, y)
+fitla <- suni2D(x, y, method = "lambda_alpha")
+plot(fitla)
+plot(fitzt, xvar = "penalty")
+template <- sulnet2D(x, y, method = "septhresh", nlambda = 10)
 template$b0
 template$beta
+
+
+
+
+
+set.seed(1)
+nobs <- as.integer(100)
+nvars <- as.integer(20)
+x <- matrix(rnorm(nobs * nvars), nobs, nvars)
+y <- rnorm(nobs)
+
+cvfit <- cv.sulnet2D(x, y, nfolds = 5)

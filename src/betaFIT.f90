@@ -1,3 +1,7 @@
+! Construct the univariate transformed design used by the grid solvers.
+! Nonzero beta_ju entries mark supplied priors; other entries use univariate
+! slopes. Scale priors by medr/medpj, then return beta, predictor offsets
+! beta0, and fit(:,j) = x(:,j)*beta(j) + beta0(j). No LOO step is performed.
 SUBROUTINE betaFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
     ! -----------------------------------------------------------------------
     IMPLICIT NONE

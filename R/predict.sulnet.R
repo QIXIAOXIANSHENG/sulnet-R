@@ -1,84 +1,47 @@
-#' Make predictions from a "sulnet" object
+#' Predict from a sulnet model
 #'
-#' Similar to other predict methods, this functions predicts fitted values and
-#' class labels from a fitted \code{\link{sulnet}} object.
+#' Delegate prediction to the next path class in the fitted object.
 #'
-#' \code{s} is the new vector at which predictions are requested. If \code{s}
-#' is not in the lambda sequence used for fitting the model, the
-#' \code{predict} function will use linear interpolation to make predictions.
-#' The new values are interpolated using a fraction of predicted values from
-#' both left and right \code{lambda} indices.
+#' @param object Object inheriting from \code{sulnet}.
+#' @param newx Predictor matrix for new observations, with the same columns and
+#'   order as the training predictors and no intercept column.
+#' @param s Lambda values at which to evaluate the path. \code{NULL} uses all
+#'   fitted values. Intermediate values are linearly interpolated and values
+#'   outside the fitted range are clamped to its endpoints.
+#' @param type Prediction type forwarded to the next method. Available choices
+#'   depend on the path class: Gaussian paths accept \code{"link"}, logistic
+#'   paths also accept \code{"class"}, and Cox paths accept \code{"link"} or
+#'   \code{"response"}.
+#' @param ... Additional arguments passed to the next prediction method.
 #'
-#' @aliases predict.sulnet predict.hsvmpath predict.sqsvmpath predict.logitpath
-#'   predict.lspath predict.erpath
-#'
-#' @param object fitted \code{\link{sulnet}} model object.
-#' @param newx matrix of new values for \code{x} at which predictions are to be
-#'   made. NOTE: \code{newx} must be a matrix, \code{predict} function does not
-#'   accept a vector or other formats of \code{newx}.
-#' @param s value(s) of the penalty parameter \code{lambda} at which
-#'   predictions are required. Default is the entire sequence used to create
-#'   the model.
-#' @param type type of prediction required. \itemize{ \item Type \code{"link"}
-#'   gives the linear predictors for classification problems and gives
-#'   predicted response for regression problems. \item Type \code{"class"}
-#'   produces the class label corresponding to the maximum probability. Only
-#'   available for classification problems.}
-#' @param \dots Not used. Other arguments to predict.
-#' @return The object returned depends on type.
-#' @author Yi Yang, Yuwen Gu and Hui Zou\cr
-#'
-#' Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-#' @seealso \code{\link{coef}} method
-#' @references Yang, Y. and Zou, H. (2012).
-#'   "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-#'   \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-#'   BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-#'
-#'   Gu, Y., and Zou, H. (2016).
-#'   "High-dimensional generalizations of asymmetric least squares regression and their applications."
-#'   \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-#'
-#'   Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-#'   "Regularization paths for generalized linear models via coordinate descent."
-#'   \emph{Journal of Statistical Software, 33, 1.}\cr
-#'   \url{https://www.jstatsoft.org/v33/i01/}
-#' @keywords models regression
+#' @return The next prediction method's result, usually a matrix or a
+#'   list of matrices with observations in rows and selected path values in
+#'   columns.
 #' @examples
-#'
 #' set.seed(1)
-#' x <- matrix(rnorm(200), 20, 10)
-#' beta <- rep(c(1, 0), 5)
-#' y <- x %*% beta + rnorm(20, 0, 0.1)
-#' # 1. solution paths for the LASSO penalized least squares.
-#' # To use LASSO set lambda2 = 0.
+#' nobs <- as.integer(100)
+#' nvars <- as.integer(20)
+#' x <- matrix(rnorm(nobs * nvars), nobs, nvars)
+#' y <- rnorm(nobs)
+#' fit <- sulnet(x, y)
+#' newx <- matrix(rnorm(nobs * nvars), nobs, nvars)
+#' predict(fit, newx)
 #'
-#' m1 <- sulnet(x = x, y = y, lambda2 = 0, method = "ls")
-#' predict(m1, newx = matrix(rnorm(200), 20, 10))
-#'
+#' @method predict sulnet
 #' @export
 predict.sulnet <- function(object, newx, s = NULL, type = c("class", "link"),
                            ...) {
   NextMethod("predict")
 }
 
-##' Model predictions
-##'
-##' \code{predict} is a generic function for predictions from the results of
-##' various model fitting functions. The function invokes particular
-##' \emph{methods} which depend on the \code{\link{class}} of the first
-##' argument.
-##'
-##' @param object a model object for which prediction is desired.
-##' @param \dots additional arguments affecting the predictions produced.
-##'
-##' @return The form of the value returned by \code{predict} depends on the
-##'   class of its argument. See the documentation of the particular methods for
-##'   details of what is produced by that method.
-##'
-##' @seealso \code{\link{predict.sulnet}}, \code{\link{predict.erpath}},
-##'   \code{\link{predict.lspath}}, \code{\link{predict.hsvmpath}},
-##'   \code{\link{predict.logitpath}}, \code{\link{predict.sqsvmpath}}.
-##'
-##' @export
+#' Predict from a fitted model
+#'
+#' Dispatch to the method associated with the class of the fitted object.
+#'
+#' @param object Fitted model object.
+#' @param ... Additional arguments passed to the selected method.
+#'
+#' @return The value returned by the selected method; see the corresponding
+#'   class method for coefficient scales and dimensions.
+#' @export
 predict <- function(object, ...) UseMethod("predict")

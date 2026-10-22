@@ -1,6 +1,11 @@
-##' @import Matrix
+#' @import Matrix
+#' @importFrom stats median
 
-suniZTpath <- function(x, y, nzeta, ntau, flminz, flmint, uzeta, utau, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2, nobs, nvars, vnames) {
+suniZTpath <- function(
+  x, y, nzeta, ntau, flminz, flmint, uzeta, utau,
+  isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2,
+  nobs, nvars, vnames
+) {
   y <- as.double(y)
   storage.mode(x) <- "double"
 
@@ -35,7 +40,7 @@ suniZTpath <- function(x, y, nzeta, ntau, flminz, flmint, uzeta, utau, isd, intr
     tau = gam$tau,
     npass = fit$npass,
     jerr = fit$jerr,
-    use = "zeta_tau",
+    method = "zeta_tau",
     inner = list(
       theta0 = output$theta0,
       theta = output$theta,

@@ -1,3 +1,7 @@
+! Fit a zeta-tau grid on the supplied transformed predictor matrix.
+! Apply exclusions and optional centering/scaling, then restore theta to the
+! input scale. Compressed arrays use (active slot, zeta index, tau index);
+! apenalty records traversal and napenalty counts completed grid fits.
 SUBROUTINE suniZTNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nzeta,&
 & ntau, uzeta, utau, eps, isd, intr, maxit, napenalty, theta0, &
 & theta, itheta, ntheta, apenalty, npass, diffzeta, difftau, jerr)
@@ -107,6 +111,9 @@ SUBROUTINE suniZTNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nzeta,&
 END SUBROUTINE suniZTNET
 
 
+! Coordinate updates with positive threshold zeta*pf and negative
+! threshold zeta*pf + tau*pf3. Reuse coefficients and residuals from the
+! predecessor recorded in ind; return jerr for incomplete or failed fits.
 SUBROUTINE suniZTNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     & pmax, nzeta, ntau, uzeta, utau, eps, maxit, napenalty, theta0, theta, &
     & itheta, ntheta, apenalty, npass, ind, intr, jerr)

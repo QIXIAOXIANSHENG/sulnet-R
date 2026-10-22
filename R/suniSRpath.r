@@ -1,4 +1,5 @@
-##' @import Matrix
+#' @import Matrix
+#' @importFrom stats median
 
 suniSRpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2, nobs, nvars, vnames) {
   y <- as.double(y)
@@ -23,6 +24,9 @@ suniSRpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, intr
     PACKAGE = "sulnet"
   )
   output <- getoutputSR(fit, maxit, pmax, nvars, vnames)
+  tol <- sqrt(.Machine$double.eps)
+  which <- abs(output$penalty.path[, 4] - 0) < tol
+  output$penalty.path[which, 4] <- 0
   gam <- theta2gamma(output, betaFIT)
   outlist <- list(
     gamma = gam$gamma,
@@ -33,7 +37,7 @@ suniSRpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, intr
     rate = gam$rate,
     npass = fit$npass,
     jerr = fit$jerr,
-    use = "sum_rate",
+    method = "sum_rate",
     inner = list(
       theta0 = output$theta0,
       theta = output$theta,

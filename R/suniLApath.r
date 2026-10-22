@@ -1,4 +1,5 @@
-##' @import Matrix
+#' @import Matrix
+#' @importFrom stats median
 
 suniLApath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2, nobs, nvars, vnames) {
   y <- as.double(y)
@@ -23,6 +24,9 @@ suniLApath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha, is
     PACKAGE = "sulnet"
   )
   output <- getoutputLA(fit, maxit, pmax, nvars, vnames)
+  tol <- sqrt(.Machine$double.eps)
+  which <- abs(output$penalty.path[, 4] - 0) < tol
+  output$penalty.path[which, 4] <- 0
   gam <- theta2gamma(output, betaFIT)
   outlist <- list(
     gamma = gam$gamma,
@@ -33,7 +37,7 @@ suniLApath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha, is
     alpha = gam$alpha,
     npass = fit$npass,
     jerr = fit$jerr,
-    use = "lambda_alpha",
+    method = "lambda_alpha",
     inner = list(
       theta0 = output$theta0,
       theta = output$theta,

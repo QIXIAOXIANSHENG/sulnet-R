@@ -7,57 +7,29 @@
 #   Journal of Statistical Software, 33(1), 1-22.
 #   URL: https://www.jstatsoft.org/v33/i01/.
 
-#' Plot coefficients from a "sulnet" object
+#' Plot coefficient paths for a sulnet fit
 #'
-#' Produces a coefficient profile plot of the coefficient paths for a fitted
-#' \code{\link{sulnet}} object. This function is modified based on the
-#' \code{plot} function from the \code{glmnet} package.
+#' Draw slope trajectories, excluding the intercept and predictors that are zero
+#'   over the entire plotted path.
 #'
-#' A coefficient profile plot is produced.
+#' @details The top axis shows the stored nonzero-coefficient counts along the
+#'   path.
 #'
-#' @param x fitted \code{\link{sulnet}} model
-#' @param xvar what is on the X-axis. \code{"norm"} plots against the L1-norm
-#'   of the coefficients, \code{"lambda"} against the log-lambda sequence.
-#' @param color if \code{TRUE}, plot the curves with rainbow colors.
-#'   \code{FALSE} is gray colors. Default is \code{FALSE}
-#' @param label if \code{TRUE}, label the curves with variable sequence
-#'   numbers. Default is \code{FALSE}
-#' @param \dots other graphical parameters to plot
-#' @author Yi Yang, Yuwen Gu and Hui Zou\cr Maintainer: Yi Yang
-#'   <yi.yang6@mcgill.ca>
-#' @references Yang, Y. and Zou, H. (2012).
-#'   "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-#'   \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-#'   BugReport: \url{https://github.com/emeryyi/sulnet}\cr
+#' @param x A fitted \code{sulnet} object.
+#' @param xvar Horizontal coordinate: \code{"norm"} for the L1 norm of plotted
+#'   slopes, or \code{"lambda"} for log lambda. Default is \code{"lambda"}.
+#' @param color When FALSE, explicitly use the package's rainbow palette;
+#'   when TRUE, leave colors to \code{matplot} and arguments in \code{...}.
+#' @param label Whether to label curves with one-based predictor indices.
+#' @param ... Additional graphical arguments passed to \code{matplot}.
 #'
-#'   Gu, Y., and Zou, H. (2016).
-#'   "High-dimensional generalizations of asymmetric least squares regression and their applications."
-#'   \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-#'
-#'   Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-#'   "Regularization paths for generalized linear models via coordinate descent."
-#'   \emph{Journal of Statistical Software, 33, 1.}\cr
-#'   \url{https://www.jstatsoft.org/v33/i01/}
-#' @keywords models regression
-#' @examples
-#' set.seed(1)
-#' x <- matrix(rnorm(200), 20, 10)
-#' beta <- rep(c(1, 0), each = c(5, 5))
-#' y <- x %*% beta + rnorm(20, 0, 0.1)
-#' # 1. solution paths for the LASSO penalized least squares.
-#' # To use LASSO set lambda2 = 0.
-#'
-#' m1 <- sulnet(x = x, y = y, lambda2 = 0, method = "ls")
-#' par(mfrow = c(1, 3))
-#' plot(m1) # plots against the L1-norm of the coefficients
-#' plot(m1, xvar = "lambda", label = TRUE) # plots against the log-lambda sequence
-#' plot(m1, color = TRUE)
-#'
+#' @return Called for its graphical side effect; no fitted model is returned.
 #' @importFrom graphics matplot axis text
 #' @importFrom grDevices gray.colors rainbow
 #' @importFrom stats approx
+#' @method plot sulnet
 #' @export
-plot.sulnet <- function(x, xvar = c("norm", "lambda"), color = FALSE,
+plot.sulnet <- function(x, xvar = c("lambda", "norm"), color = FALSE,
                         label = FALSE, ...) {
   beta <- x$beta
   lambda <- x$lambda

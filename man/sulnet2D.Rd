@@ -2,14 +2,13 @@
 % Please edit documentation in R/sulnet2D.R
 \name{sulnet2D}
 \alias{sulnet2D}
-\title{Fits the regularization paths for large margin classifiers}
+\title{Fit legacy two-dimensional penalized regression paths}
 \usage{
 sulnet2D(
   x,
   y,
   nlambda = 100,
-  method = c("suni_2", "adasuni", "adasuni2", "sunilambdatest", "adasunilambdatest",
-    "adasuni2lambdatest", "septhresh"),
+  method = c("suni_2", "septhresh"),
   family = c("gaussian", "binomial", "cox"),
   lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),
   lambda = NULL,
@@ -26,272 +25,120 @@ sulnet2D(
   lamPos = 0.1,
   loo = TRUE,
   alpha = seq(0.01, 0.99, length.out = 21),
-  asuweight = c("ols", "lasso", "lasso_ols", "univar"),
   negOnly = FALSE
 )
 }
 \arguments{
-\item{x}{matrix of predictors, of dimension \eqn{N \times p}{N*p}; each row
-is an observation vector.}
+\item{x}{Predictor matrix with observations in rows and predictors in
+columns; coerced to a dense matrix by the fitting function.}
 
-\item{y}{response variable. This argument should be a two-level factor for
-classification.}
+\item{y}{Response with one observation per row of \code{x}.}
 
-\item{nlambda}{the number of \code{lambda} values - default is 100.}
+\item{nlambda}{Number of lambda values to generate when \code{lambda} is
+\code{NULL}; default 100.}
 
-\item{method}{a character string specifying the loss function to use, valid
-options are: \itemize{ \item \code{"ls"} least square loss. \item \code{"suni"} # nolint
-soft unilasso loss. } Default is \code{"ls"}.}
+\item{method}{Legacy path implementation. Gaussian branches defined in
+ \code{R/} include \code{"suni_2"}, \code{"septhresh"}.
+Binomial fitting has a \code{"septhresh"} branch; Cox fitting
+ has \code{"suni_2"} and \code{"septhresh"} branches.}
 
-\item{family}{The family of data, valid options are: \itemize{\item \code{gaussian} The gaussian family for linear regression \item{binomial} The binomial family for logistic regression \item{cox} The cox family for cox regression}}
+\item{family}{Response family: \code{"gaussian"}, \code{"binomial"}, or
+\code{"cox"}. Cox responses are right-censored survival responses.
+Available method branches depend on the family.}
 
-\item{lambda.factor}{The factor for getting the minimal lambda in
-\code{lambda} sequence, where \code{min(lambda)} = \code{lambda.factor} *
-\code{max(lambda)}, where \code{max(lambda)} is the smallest value of
-\code{lambda} for which all coefficients are zero. The default depends on
-the relationship between \eqn{N} (the number of rows in the matrix of
-predictors) and \eqn{p}{p} (the number of predictors). If \eqn{N > p}, the
-default is \code{0.0001}, close to zero. If \eqn{N<p}, the default is
-\code{0.01}. A very small value of \code{lambda.factor} will lead to a
-saturated fit. It takes no effect if there is user-defined \code{lambda}
-sequence.}
+\item{lambda.factor}{Ratio controlling the lower end of an automatically
+generated penalty path; defaults to 0.01 when observations are fewer than
+predictors, and 0.0001 otherwise.}
 
-\item{lambda}{a user supplied \code{lambda} sequence. Typically, by leaving
-this option unspecified users can have the program compute its own
-\code{lambda} sequence based on \code{nlambda} and \code{lambda.factor}.
-Supplying a value of \code{lambda} overrides this. It is better to supply
-a decreasing sequence of \code{lambda} values than a single (small) value,
-if not, the program will sort user-defined \code{lambda} sequence in
-decreasing order automatically.}
+\item{lambda}{Optional nonnegative lambda values, sorted in decreasing order.
+Supplying these overrides \code{nlambda} and \code{lambda.factor}.}
 
-\item{lambda2}{regularization parameter \eqn{\lambda_2}{lambda2} for the
-quadratic penalty of the coefficients.}
+\item{lambda2}{Nonnegative quadratic-penalty tuning parameter passed to the
+solver as \code{lam2}; default zero.}
 
-\item{pf}{L1 penalty factor of length \eqn{p}{p} used for adaptive LASSO or
-adaptive elastic net. Separate L1 penalty weights can be applied to each
-coefficient of \eqn{\beta}{beta} to allow differential L1 shrinkage. Can
-be 0 for some variables, which implies no L1 shrinkage, and results in
-that variable always being included in the model. Default is 1 for all
-variables (and implicitly infinity for variables listed in
-\code{exclude}).}
+\item{pf}{Length-p vector of L1 penalty factors, defaulting to ones. The
+native least-squares solvers truncate negative entries to zero and require
+at least one positive entry.}
 
-\item{pf2}{L2 penalty factor of length \eqn{p}{p} used for adaptive LASSO or
-adaptive elastic net. Separate L2 penalty weights can be applied to each
-coefficient of \eqn{\beta}{beta} to allow differential L2 shrinkage. Can
-be 0 for some variables, which implies no L2 shrinkage. Default is 1 for
-all variables.}
+\item{pf2}{Length-p vector of quadratic penalty factors, defaulting to ones.
+The native least-squares solvers truncate negative entries to zero and
+require at least one positive entry, even when \code{lambda2 = 0}.}
 
-\item{exclude}{indices of variables to be excluded from the model. Default
-is none. Equivalent to an infinite penalty factor.}
+\item{exclude}{Optional vector of one-based predictor indices to exclude from
+the penalized fit.}
 
-\item{dfmax}{limit the maximum number of variables in the model. Useful for
-very large \eqn{p}, if a partial path is desired. Default is \eqn{p+1}.}
+\item{dfmax}{Maximum number of nonzero coefficients used as a path stopping
+criterion; default p + 1.}
 
-\item{pmax}{limit the maximum number of variables ever to be nonzero. For
-example once \eqn{\beta} enters the model, no matter how many times it
-exits or re-enters model through the path, it will be counted only once.
-Default is \code{min(dfmax*1.2,p)}.}
+\item{pmax}{Maximum active-set size allocated by the solver; default
+\code{min(dfmax * 1.2, p)}.}
 
-\item{standardize}{logical flag for variable standardization, prior to
-fitting the model sequence. If \code{TRUE}, \code{x} matrix is normalized
-such that \code{x} is centered (i.e.
-\eqn{\sum^N_{i=1}x_{ij}=0}{sum(Xj)=0}), and sum squares of each column
-\eqn{\sum^N_{i=1}x_{ij}^2/N=1}{<Xj,Xj>/N=1}. If \code{x} matrix is
-standardized, the ending coefficients will be transformed back to the
-original scale. Default is \code{FALSE}.}
+\item{standardize}{Whether to scale the predictors used by the penalized
+solver; default FALSE.}
 
-\item{intercept}{logical flag to indicate whether to include or exclude the
-intercept in the model.}
+\item{intercept}{Whether to fit an intercept in the penalized stage.
+Univariate preprocessing, when used, computes its own predictor-specific
+intercepts.}
 
-\item{eps}{convergence threshold for coordinate majorization descent. Each
-inner coordinate majorization descent loop continues until the relative
-change in any coefficient (i.e., \eqn{\max_j(\beta_j^{new}
--\beta_j^{old})^2}{max(j)(beta_new[j]-beta_old[j])^2}) is less than
-\code{eps}. For HHSVM, i.e., \code{method="hhsvm"}, it is
-\eqn{\frac{2}{\delta}\max_j(\beta_j^{new}-\beta_j^{old})^2}{2*max(j)
-(beta_new[j]-beta_old[j])^2/delta}. For expectile regression,
-i.e., \code{method="er"}, it is \eqn{2\max(1-\omega,\omega)
-\max_j(\beta_j^{new}-\beta_j^{old})^2}{2*max(1-omega,omega)*max(j)
-(beta_new[j]-beta_old[j])^2}. Defaults value is \code{1e-8}.}
+\item{eps}{Convergence tolerance passed to the native coordinate solver;
+default 1e-8.}
 
-\item{maxit}{maximum number of outer-loop iterations allowed at fixed lambda
-value. Default is 1e6. If models do not converge, consider increasing
-\code{maxit}.}
+\item{maxit}{Base coordinate-pass limit, default 1e5. This wrapper multiplies
+it by the number of lambda values for its current method choices.}
 
-\item{lamPos}{the penalty term for the negativity constraint in soft unilasso
-model. Default is 0.1.}
+\item{lamPos}{Negative-penalty grid, sorted increasingly and used when
+\code{alpha = NULL}; default 0.1.}
 
-\item{loo}{the logical variable determining if the leave-one-out fits are used
-in the soft unilasso model. Default is \code{TRUE}.}
+\item{loo}{Whether univariate preprocessing uses leave-one-out fitted values;
+ignored when that preprocessing is bypassed.}
 
-\item{alpha}{the proportion of penalty term split between lasso penalty \code{lambda}
-and soft-unilasso penalty \code{lamPos}. If \code{alpha} is not \code{NULL}, then
-\code{alpha} will be used to generate different \code{lamPos}. Otherwise,
-\code{lamPos} will be used. Default is \code{seq(0, 0.5, length.out = 100)}}
+\item{alpha}{Mixing grid, defaulting to 21 values from 0.01 to 0.99. Absolute
+values are sorted. A vector of length greater than one is rescaled to span
+0.01 to 0.99; a scalar is clamped to [0.5, 1]. Use \code{NULL} to select
+the \code{lamPos} grid.}
 
-\item{asuweight}{description}
-
-\item{negOnly}{the logical variable determining if only the second step in the
-soft unilasso model is fitted. Default is \code{FALSE}.}
+\item{negOnly}{Whether to bypass univariate preprocessing and fit directly on
+the supplied predictors in the univariate-guided path routines.}
 }
 \value{
-An object with S3 class \code{\link{sulnet}}. \item{call}{the call
-  that produced this object} \item{b0}{intercept sequence of length
-  \code{length(lambda)}} \item{beta}{a \code{p*length(lambda)} matrix of
-  coefficients, stored as a sparse matrix (\code{dgCMatrix} class, the
-  standard class for sparse numeric matrices in the \code{Matrix} package.).
-  To convert it into normal type matrix use \code{as.matrix()}.}
-  \item{lambda}{the actual sequence of \code{lambda} values used}
-  \item{df}{the number of nonzero coefficients for each value of
-  \code{lambda}.} \item{dim}{dimension of coefficient matrix (ices)}
-  \item{npasses}{total number of iterations (the most inner loop) summed
-  over all lambda values} \item{jerr}{error flag, for warnings and errors, 0
-  if no error.}
+A list inheriting from \code{sulnet2D} and the selected path class.
+  Components may include:
+  \describe{
+    \item{beta}{Coefficient paths. For univariate-guided Gaussian fits, a
+      list of p by fitted-path-length matrices on the original-predictor
+      scale, one for each second-coordinate value.}
+    \item{b0}{Intercept paths on the original-response scale, one for each
+      second-coordinate value. Cox fits omit this component.}
+    \item{lambda}{Penalty values corresponding to the fitted paths.}
+    \item{lambdamat}{Branch-specific lambda vectors, when separate paths use
+      different penalty values.}
+    \item{alpha, lamPos}{The second-coordinate grid; \code{alpha} is returned
+      for alpha-based fits and \code{lamPos} for negative-penalty fits.}
+    \item{use_alpha}{Whether the alpha-based parameterization was used.}
+    \item{df}{Numbers of nonzero coefficients along the fitted paths.}
+    \item{dim}{Dimensions of the fitted coefficient paths.}
+    \item{npasses, jerr}{Solver diagnostics giving the number of coordinate
+      passes and the integer error code, respectively.}
+    \item{fbeta, fb0}{Intermediate coefficient and intercept paths produced
+      when univariate preprocessing is used.}
+    \item{univariate.fit}{The first-stage fit used for univariate
+      preprocessing.}
+    \item{call}{The matched function call.}
+  }
 }
 \description{
-Fits a regularization path for large margin classifiers at a sequence of
-regularization parameters lambda.
+Fit a collection of lambda paths indexed by alpha or a separate
+  negative-coefficient penalty.
 }
 \details{
-Note that the objective function in \code{sulnet} is \deqn{Loss(y,
-  X, \beta)/N + \lambda_1\Vert\beta\Vert_1 +
-  0.5\lambda_2\Vert\beta\Vert_2^2}{Loss(y, X, beta))/N + lambda1 * |beta| +
-  0.5 * lambda2 * |beta|^2} where the penalty is a combination of L1 and L2
-  term. Users can specify the loss function to use, options include
-  Huberized squared hinge loss, Squared hinge loss, least square loss,
-  logistic regression and expectile regression loss. Users can also tweak
-  the penalty by choosing different \eqn{lambda2} and penalty factor.
-
-  For computing speed reason, if models are not converging or running slow,
-  consider increasing \code{eps}, decreasing \code{nlambda}, or increasing
-  \code{lambda.factor} before increasing \code{maxit}.
-
-  \strong{FAQ:}
-
-  \bold{Question: }\dQuote{\emph{I couldn't get an idea how to specify an
-  option to get adaptive LASSO, how to specify an option to get elastic net
-  and adaptive elastic net? Could you please give me a quick hint?}}
-
-  \bold{Answer: } \code{lambda2} is the regularize parameter for L2 penalty
-  part. To use LASSO, set \code{lambda2=0}. To use elastic net, set
-  \code{lambda2} as nonzero.
-
-  \code{pf} is the L1 penalty factor of length \eqn{p}{p} (\eqn{p}{p} is the
-  number of predictors). Separate L1 penalty weights can be applied to each
-  coefficient to allow differential L1 shrinkage. Similiarly \code{pf2} is
-  the L2 penalty factor of length \eqn{p}{p}.
-
-  To use adaptive LASSO, you should set \code{lambda2=0} and also specify
-  \code{pf} and \code{pf2}. To use adaptive elastic net, you should set
-  \code{lambda2} as nonzero and specify \code{pf} and \code{pf2},
-
-  For example:
-
-  \preformatted{
-    library('sulnet')
-    # Dataset N = 100, p = 10
-    x_log <- matrix(rnorm(100*10),100,10)
-    y_log <- sample(c(-1,1),100,replace=TRUE)
-
-    # LASSO
-    m <- sulnet(x=x_log,y=y_log,lambda2=0,method="log")
-    plot(m)
-
-    # elastic net with lambda2 = 1
-    m <- sulnet(x=x_log,y=y_log,lambda2=1,method="log")
-    plot(m)
-
-    # adaptive lasso with penalty factor
-    # pf = 0.5 0.5 0.5 0.5 0.5 1.0 1.0 1.0 1.0 1.0
-    m <- sulnet(x=x_log,y=y_log,lambda2=0,method="log",
-                pf=c(rep(0.5,5),rep(1,5)))
-    plot(m)
-
-    # adaptive elastic net with lambda2 = 1 and penalty factor pf =
-    # c(rep(0.5,5),rep(1,5)) pf2 = 3 3 3 3 3 1 1 1 1 1
-    m <- sulnet(x=x_log,y=y_log,lambda2=1,method="log",
-                pf=c(rep(0.5,5),rep(1,5)),
-                pf2 = c(rep(3,5),rep(1,5)))
-    plot(m)
-  }
-  \bold{Question: }\dQuote{\emph{what is the meaning of the parameter
-  \code{pf}? On the package documentation, it said \code{pf} is the penalty
-  weight applied to each coefficient of beta?}}
-
-  \bold{Answer: } Yes, \code{pf} and \code{pf2} are L1 and L2 penalty factor
-  of length \eqn{p}{p} used for adaptive LASSO or adaptive elastic net. 0
-  means that the feature (variable) is always excluded, 1 means that the
-  feature (variable) is included with weight 1.
-
-  \bold{Question: }\dQuote{\emph{Does sulnet deal with both continuous and
-  categorical response variables?}}
-
-  \bold{Answer: } Yes, both are supported, you can use a continuous type
-  response variable with the least squares regression loss, or a categorical
-  type response with losses for classification problem.
-
-  \bold{Question: }\dQuote{\emph{Why does predict function not work? predict
-  should return the predicted probability of the positive class. Instead I
-  get:}}
-  \preformatted{
-    Error in as.matrix(as.matrix(cbind2(1, newx)) \%*\% nbeta):
-    error in evaluating the argument 'x' in selecting a method for function 'as.matrix':
-    Error in t(.Call(Csparse_dense_crossprod, y, t(x))):
-    error in evaluating the argument 'x' in selecting a method for function 't':
-    Error: Cholmod error 'X and/or Y have wrong dimensions' at
-      file ../MatrixOps/cholmod_sdmult.c, line 90?
-  }
-
-  \dQuote{\emph{Using the Arcene dataset and executing the following code
-  will give the above error:}}
-  \preformatted{
-    library(sulnet)
-    arc <- read.csv("arcene.csv", header=FALSE)
-    fit <- sulnet(arc[,-10001], arc[,10001], standardize=FALSE,
-                  method="logit")
-    pred <- rnorm(10000)
-    predict(fit, pred, type="link")
-  }
-
-  \bold{Answer: } It is actually NOT a bug of sulnet. When make prediction
-  using a new matrix x, each observation of x should be arranged as a row of
-  a matrix. In your code, because "pred" is a vector, you need to convert
-  "pred" into a matrix, try the following code:
-  \preformatted{
-     pred <- rnorm(10000)
-     pred <- matrix(pred,1,10000)
-     predict(fit, pred, type="link")
-  }
+For the Gaussian \code{suni_2} branch, univariate slopes and
+  intercepts construct the transformed predictors. The solver coefficients
+  are reconstructed on the original scale before storage in \code{beta} and
+  \code{b0}; these names therefore differ from the initial weights named beta
+  in the newer grid API. With non-NULL alpha, this branch uses an L1
+  threshold \code{lambda * (1 - alpha) * pf} and adds \code{lambda * alpha}
+  to the negative threshold. Other branches have their own native
+  implementations. Not every accepted method/family pair has a fitting
+  branch. A repeated multi-value alpha grid has zero range in the rescaling
+  step.
 }
-\examples{
-
-set.seed(1)
-x <- matrix(rnorm(200), 20, 10)
-beta <- rep(c(1, 0), 5)
-y <- x \%*\% beta + rnorm(20, 0, 0.1)
-# 1. solution paths for the LASSO penalized least squares.
-# To use LASSO set lambda2 = 0.
-
-m1 <- sulnet2D(x = x, y = y)
-plot(m1)
-
-}
-\references{
-Yang, Y. and Zou, H. (2012).
-  "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-  \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-  BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-
-  Gu, Y., and Zou, H. (2016).
-  "High-dimensional generalizations of asymmetric least squares regression and their applications."
-  \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-}
-\seealso{
-\code{plot.sulnet}
-}
-\author{
-Yi Yang, Yuwen Gu and Hui Zou\cr
-  Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-}
-\keyword{models}
-\keyword{regression}

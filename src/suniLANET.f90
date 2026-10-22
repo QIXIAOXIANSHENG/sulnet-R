@@ -1,3 +1,7 @@
+! Fit a lambda-alpha grid on the supplied transformed predictor matrix.
+! Apply exclusions and optional centering/scaling, then restore theta to the
+! input scale. Compressed arrays use (active slot, lambda index, alpha index);
+! apenalty records traversal and napenalty counts completed grid fits.
 SUBROUTINE suniLANET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nlambda,&
 & nalpha, ulambda, ualpha, eps, isd, intr, maxit, napenalty, theta0, &
 & theta, itheta, ntheta, apenalty, npass, jerr)
@@ -105,6 +109,9 @@ SUBROUTINE suniLANET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nlambda,&
 END SUBROUTINE suniLANET
 
 
+! Coordinate updates with separate positive and negative thresholds:
+! lambda*(1-alpha)*pf and lambda*alpha*pf3. Warm starts use the predecessor
+! in ind; the quadratic coordinate denominator adds lam2*pf2.
 SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     & pmax, nlambda, nalpha, ulambda, ualpha, eps, maxit, napenalty, theta0, theta, &
     & itheta, ntheta, apenalty, npass, ind, intr, jerr)

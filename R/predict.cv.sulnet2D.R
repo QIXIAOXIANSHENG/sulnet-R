@@ -1,54 +1,35 @@
-#' Make predictions from a "cv.sulnet" object.
+#' Predict at cross-validated penalties
 #'
-#' This function makes predictions from a cross-validated sulnet model, using
-#' the stored \code{"sulnet2D.fit"} object, and the optimal value chosen for
-#' \code{lambda} and \code{alpha}/\code{lamPos}.
+#' Use the penalty selection stored by cross-validation to query the full-data
+#'   model.
 #'
-#' This function makes it easier to use the results of cross-validation to
-#' make a prediction.
+#' @details Both coordinates of the selected penalty pair are evaluated using
+#'   the full-data fit. This method currently looks for \code{lambda.1se} or
+#'   \code{lambda.min} inside the selected pair, whereas \code{cv.sulnet2D}
+#'   stores its first coordinate as \code{lambda}.
 #'
-#' @param object fitted \code{\link{cv.sulnet}} object.
-#' @param newx matrix of new values for \code{x} at which predictions are to be
-#'   made. Must be a matrix. See documentation for \code{predict.sulnet}.
-#' @param s value(s) of the penalty parameter \code{lambda} at which
-#'   predictions are required. Default is the value \code{s="lambda.1se"}
-#'   stored on the CV object. Alternatively \code{s="lambda.min"} can be used.
-#'   If \code{s} is numeric, it is taken as the value(s) of \code{lambda} to be
-#'   used.
-#' @param \dots not used. Other arguments to predict.
-#' @return The object returned depends the \dots{} argument which is passed on
-#'   to the \code{\link{predict}} method for \code{\link{sulnet}} objects.
-#' @author Yi Yang, Yuwen Gu and Hui Zou\cr
+#' @param object Cross-validation object of class \code{cv.sulnet2D}.
+#' @param newx Predictor matrix for new observations, with the same columns and
+#'   order as the training predictors and no intercept column.
+#' @param s \code{"cv.1se"} (default) or \code{"cv.min"}, selecting the stored
+#'   penalty pair. Numeric input is not accepted.
+#' @param ... Additional arguments passed to the fitted model's predict
+#'   method.
 #'
-#' Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-#' @seealso \code{\link{cv.sulnet}}, and \code{\link{coef.cv.sulnet}} methods.
-#' @references Yang, Y. and Zou, H. (2012).
-#'   "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-#'   \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-#'   BugReport: \url{https://github.com/emeryyi/sulnet}\cr
+#' @return The fitted model method's result. Prediction matrices have new
+#'   observations in rows and selected lambda values in columns.
 #'
-#'   Gu, Y., and Zou, H. (2016).
-#'   "High-dimensional generalizations of asymmetric least squares regression and their applications."
-#'   \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-#'
-#'   Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-#'   "Regularization paths for generalized linear models via coordinate descent."
-#'   \emph{Journal of Statistical Software, 33, 1.}\cr
-#'   \url{https://www.jstatsoft.org/v33/i01/}
-#' @keywords models regression
 #' @examples
-#'
 #' set.seed(1)
-#' x <- matrix(rnorm(2000), 200, 10)
-#' beta <- rep(c(1, 0), 5)
-#' y <- x %*% beta + rnorm(200, 0, 0.1)
-#' # 1. solution paths for the LASSO penalized least squares.
-#' # To use LASSO set lambda2 = 0.
+#' nobs <- as.integer(100)
+#' nvars <- as.integer(20)
+#' x <- matrix(rnorm(nobs * nvars), nobs, nvars)
+#' y <- rnorm(nobs)
+#' cvfit <- cv.sulnet2D(x, y, nfolds = 5)
+#' newx <- matrix(rnorm(nobs * nvars), nobs, nvars)
+#' predict(cvfit, newx)
 #'
-#' set.seed(2011)
-#' cv1 <- cv.sulnet2D(x, y)
-#' pre <- predict(cv1, newx = matrix(rnorm(2000), 200, 10), s = "cv.min")
-#'
+#' @method predict cv.sulnet2D
 #' @export
 predict.cv.sulnet2D <- function(object, newx, s = c("cv.1se", "cv.min"),
                                 ...) {

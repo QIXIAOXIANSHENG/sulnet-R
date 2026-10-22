@@ -221,6 +221,9 @@ END SUBROUTINE chkvars
 
 
 ! -------------------------------------------------------------------------
+! Build one-based grid indices and warm-start predecessors for zeta-tau.
+! Zeta varies fastest within each tau level. Choose the preceding stronger
+! neighbor using supplied or computed log spacing; zero indices mean no seed.
 SUBROUTINE gridIndexZT(nzeta, ntau, uzeta, utau, ind, diffzeta, difftau)
 
     IMPLICIT NONE
@@ -334,6 +337,9 @@ SUBROUTINE gridIndexZT(nzeta, ntau, uzeta, utau, ind, diffzeta, difftau)
 END SUBROUTINE gridIndexZT
 
 
+! Visit rate values within decreasing sum levels and select a
+! componentwise-stronger predecessor by log side-penalty distance.
+! Columns 1:2 of ind are current indices, 3:4 are seed indices (zero if none).
 SUBROUTINE gridIndexSR(ns, nr, us, ur, ind)
 
     IMPLICIT NONE
@@ -422,6 +428,9 @@ SUBROUTINE gridIndexSR(ns, nr, us, ur, ind)
 
 END SUBROUTINE gridIndexSR
 
+! Visit alpha values within decreasing lambda levels and select a
+! componentwise-stronger predecessor by side-penalty distance. The first
+! level has no seed; alpha=1 uses a normalized positive-side distance.
 SUBROUTINE gridIndexLA(nlambda, nalpha, ulambda, ualpha, ind)
 
     IMPLICIT NONE
@@ -526,6 +535,9 @@ SUBROUTINE gridIndexLA(nlambda, nalpha, ulambda, ualpha, ind)
 END SUBROUTINE gridIndexLA
 
 ! -------------------------------------------------------------------------
+! Compute predictor mean, sd(y)/sd(x), and predictor-response correlation.
+! Their product is the ordinary univariate slope for nondegenerate inputs.
+! This routine does not guard against zero response or predictor variance.
 SUBROUTINE priorStandard(n, x, y, xmean, ymean, sdratio, xycor)
     ! -----------------------------------------------------------------------
     IMPLICIT NONE

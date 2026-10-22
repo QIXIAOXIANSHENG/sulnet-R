@@ -2,70 +2,40 @@
 % Please edit documentation in R/predict.cv.sulnet.R
 \name{predict.cv.sulnet}
 \alias{predict.cv.sulnet}
-\title{Make predictions from a "cv.sulnet" object.}
+\title{Predict at cross-validated penalties}
 \usage{
 \method{predict}{cv.sulnet}(object, newx, s = c("lambda.1se", "lambda.min"), ...)
 }
 \arguments{
-\item{object}{fitted \code{\link{cv.sulnet}} object.}
+\item{object}{Cross-validation object of class \code{cv.sulnet}.}
 
-\item{newx}{matrix of new values for \code{x} at which predictions are to be
-made. Must be a matrix. See documentation for \code{predict.sulnet}.}
+\item{newx}{Predictor matrix for new observations, with the same columns and
+order as the training predictors and no intercept column.}
 
-\item{s}{value(s) of the penalty parameter \code{lambda} at which
-predictions are required. Default is the value \code{s="lambda.1se"}
-stored on the CV object. Alternatively \code{s="lambda.min"} can be used.
-If \code{s} is numeric, it is taken as the value(s) of \code{lambda} to be
-used.}
+\item{s}{\code{"lambda.1se"} (default), \code{"lambda.min"}, or numeric
+lambda values.}
 
-\item{\dots}{not used. Other arguments to predict.}
+\item{...}{Additional arguments passed to the fitted model's predict
+method.}
 }
 \value{
-The object returned depends the \dots{} argument which is passed on
-  to the \code{\link{predict}} method for \code{\link{sulnet}} objects.
+The fitted model method's result. Prediction matrices have new
+  observations in rows and selected lambda values in columns.
 }
 \description{
-This function makes predictions from a cross-validated sulnet model, using
-the stored \code{"sulnet.fit"} object, and the optimal value chosen for
-\code{lambda}.
+Use the penalty selection stored by cross-validation to query the full-data
+  model.
 }
 \details{
-This function makes it easier to use the results of cross-validation to
-make a prediction.
+The selected lambda values are evaluated using the full-data fit.
 }
 \examples{
-
 set.seed(1)
-x <- matrix(rnorm(2000), 200, 10)
-beta <- rep(c(1, 0), 5)
-y <- x \%*\% beta + rnorm(200, 0, 0.1)
-
-cv1 <- cv.sulnet(x, y)
-pre <- predict(cv1, newx = matrix(rnorm(2000), 200, 10), s = "lambda.min")
-
+nobs <- as.integer(100)
+nvars <- as.integer(20)
+x <- matrix(rnorm(nobs * nvars), nobs, nvars)
+y <- rnorm(nobs)
+cvfit <- cv.sulnet(x, y, nfolds = 5)
+newx <- matrix(rnorm(nobs * nvars), nobs, nvars)
+predict(cvfit, newx)
 }
-\references{
-Yang, Y. and Zou, H. (2012).
-  "An Efficient Algorithm for Computing The HHSVM and Its Generalizations."
-  \emph{Journal of Computational and Graphical Statistics}, 22, 396-415.\cr
-  BugReport: \url{https://github.com/emeryyi/sulnet}\cr
-
-  Gu, Y., and Zou, H. (2016).
-  "High-dimensional generalizations of asymmetric least squares regression and their applications."
-  \emph{The Annals of Statistics}, 44(6), 2661–2694.\cr
-
-  Friedman, J., Hastie, T., and Tibshirani, R. (2010).
-  "Regularization paths for generalized linear models via coordinate descent."
-  \emph{Journal of Statistical Software, 33, 1.}\cr
-  \url{https://www.jstatsoft.org/v33/i01/}
-}
-\seealso{
-\code{\link{cv.sulnet}}, and \code{\link{coef.cv.sulnet}} methods.
-}
-\author{
-Yi Yang, Yuwen Gu and Hui Zou\cr
-
-Maintainer: Yi Yang <yi.yang6@mcgill.ca>
-}
-\keyword{models}
-\keyword{regression}
