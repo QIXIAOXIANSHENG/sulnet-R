@@ -194,7 +194,7 @@ The general loss function is \eqn{\frac{1}{2n}\lVert y-F\theta\rVert_2^2
 +\zeta\sum_{j=1}^p \operatorname{pf1}_j\|\theta_j\|
 +\tau\sum_{j=1}^p \operatorname{pf3}_j(\theta_j)_-
 +\lambda_2\sum_{j=1}^p \operatorname{pf2}_j\theta_j^2,}
-where \eqn{\((t)_-=\max(-t,0)\)} is the negative part. Three set of penalty
+where \eqn{(t)_-=\max(-t,0)} is the negative part. Three set of penalty
 formation are provided: zeta-tau, lambda-alpha, and sum-rate.
 
 In zeta-tau coordinates, the positive threshold is zeta * pf1 and the negative
