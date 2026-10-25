@@ -96,14 +96,29 @@ getlambdaR <- function(
 
 getztR <- function(
   nobs, nvars, nzeta, ntau, x, y,
-  uzeta, utau, pf, flminz, flmint, isd, intr, family
+  uzeta, utau, pf, flminz, flmint, intr, family
 ) {
   if (family == "gaussian") {
     getzt <- .Fortran(
       "getzt", nobs, nvars, nzeta, ntau,
       uzeta = uzeta, utau = utau,
-      x, y, pf, flminz, flmint, isd, intr,
+      x, y, pf, flminz, flmint, intr,
       diffz = double(1), difft = double(1),
+      PACKAGE = "sulnet"
+    )
+    uzeta <- as.double(getzt$uzeta)
+    utau <- as.double(getzt$utau)
+    diffz <- as.double(getzt$diffz)
+    difft <- as.double(getzt$difft)
+    return(list(
+      uzeta = uzeta, utau = utau,
+      diffz = diffz, difft = difft
+    ))
+  } else if (family == "binomial") {
+    getzt <- .Fortran("getztlog", nobs, nvars,
+      nzeta, ntau,
+      uzeta = uzeta, utau = utau, x, y, pf, flminz,
+      flmint, intr, diffz = double(1), difft = double(1),
       PACKAGE = "sulnet"
     )
     uzeta <- as.double(getzt$uzeta)
@@ -119,11 +134,11 @@ getztR <- function(
 
 getlaR <- function(
   nobs, nvars, nlambda, nalpha, x, y,
-  ulambda, ualpha, pf, flmin, flmina, isd, intr
+  ulambda, ualpha, pf, flmin, flmina, intr, family
 ) {
   getla <- .Fortran("getla", nobs, nvars, nlambda, nalpha,
     ulambda = ulambda, ualpha = ualpha, x,
-    y, pf, flmin, flmina, isd, intr, PACKAGE = "sulnet"
+    y, pf, flmin, flmina, intr, PACKAGE = "sulnet"
   )
   ulambda <- as.double(getla$ulambda)
   ualpha <- as.double(getla$ualpha)
@@ -134,11 +149,11 @@ getlaR <- function(
 
 getsrR <- function(
   nobs, nvars, nsum, nrate, x, y,
-  usum, urate, pf, flmins, flminr, isd, intr
+  usum, urate, pf, flmins, flminr, intr, family
 ) {
   getsr <- .Fortran("getsr", nobs, nvars, nsum, nrate,
     usum = usum, urate = urate, x,
-    y, pf, flmins, flminr, isd, intr, PACKAGE = "sulnet"
+    y, pf, flmins, flminr, intr, PACKAGE = "sulnet"
   )
   usum <- as.double(getsr$usum)
   urate <- as.double(getsr$urate)

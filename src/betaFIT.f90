@@ -80,60 +80,71 @@ SUBROUTINE betaFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
         fit(:, j) = fit(:, j) + beta0(j)
     END DO
 
-
-
-
-
-
-
-
-
-
-
-    ! call chkvars(nobs, nvars, x, ju)
-
-    ! ! -------- DEFINE VARIABLES -------- !
-    ! x_new = x
-    ! DO j = 1, nvars
-    !     Z(:, j) = y
-    ! END DO
-
-    ! ! -------- CENTERING AND STANDARDIZATION -------- !
-    ! CALL standard(nobs, nvars, x_new, ju, 1, 1, xmean, xnorm, maj)
-    ! XY = x_new * Z
-
-    ! ! -------- COMPUTE BETA -------- !
-    ! DO j = 1, nvars
-    !     IF (ju(j) == 1) THEN
-
-    !         beta_temp = SUM(XY(:, j))/nobs
-    !         beta0_temp = SUM(Z(:, j))/nobs
-
-    !         beta_mat(:, j) = beta_temp
-    !         beta0_mat(:, j) = beta0_temp
-    !         beta0(j) = beta0_temp
-    !         beta(j) = beta_temp
-    !     ELSE
-    !         beta_mat(:, j) =0.0D0
-    !         beta0_mat(:, j) = 0.0D0
-    !         beta(j) = 0.0D0
-    !         beta0(j) = 0.0D0
-    !     END IF
-    ! END DO
-
-    ! beta0 = beta0 - beta*xmean / xnorm
-    ! beta = beta / xnorm
-    
-
-
-    ! ! -------- LEAVE-ONE-OUT FITTING -------- !
-    ! IF (loo) THEN
-    !     Ri = DBLE(nobs) * (Z - beta0_mat - x_new * beta_mat) / &
-    !          (DBLE(nobs) - 1.0D0 - x_new ** 2)
-
-    !     fit = Z - Ri
-    ! ELSE
-    !     fit = beta0_mat + x_new * beta_mat
-    ! END IF
-
 END SUBROUTINE betaFIT
+
+SUBROUTINE betalogFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
+    ! -----------------------------------------------------------------------
+    IMPLICIT NONE
+    ! -------- INPUT VARIABLES -------- !
+    INTEGER :: nobs
+    INTEGER :: nvars
+    INTEGER, INTENT(IN) :: beta_ju(nvars)
+    DOUBLE PRECISION :: x(nobs, nvars)
+    DOUBLE PRECISION :: y(nobs)
+    DOUBLE PRECISION, INTENT(IN) :: medpj
+    ! -------- OUTPUT VARIABLES -------- !
+    DOUBLE PRECISION :: beta0(nvars)
+    DOUBLE PRECISION :: beta(nvars)
+    DOUBLE PRECISION :: fit(nobs, nvars)
+    ! -------- LOCAL DECLARATIONS -------- !
+    INTEGER :: j
+    INTEGER :: ju(nvars)
+    INTEGER, PARAMETER :: maxit = 1D5
+    INTEGER :: jerr
+    INTEGER :: npass
+    DOUBLE PRECISION, PARAMETER :: eps = 1.0D-8
+    DOUBLE PRECISION :: r(nvars)
+    DOUBLE PRECISION :: medr
+    DOUBLE PRECISION :: c
+    DOUBLE PRECISION :: b
+    DOUBLE PRECISION :: b0
+    DOUBLE PRECISION :: xnorm(nvars)
+    DOUBLE PRECISION :: xsd
+    DOUBLE PRECISION :: w0
+
+    r = 0.0D0
+
+    CALL chkvars(nobs, nvars, x, ju)
+    DO j = 1, nvars
+        b = 0.0D0
+        b0 = 0.0D0
+        npass = 0
+        jerr = 0
+        xsd = 0.0D0
+        IF (ju(j) /= 0) CALL unilogFIT(nobs, x(:, j), y, xsd, b0, b, maxit, eps, npass, jerr)
+        IF (jerr /= 0) RETURN
+        beta0(j) = b0
+        xnorm(j) = xsd
+        r(j) = b*xsd
+    END DO
+     
+    CALL median(ABS(r), nvars, ju, medr)
+    c = medr / medpj
+
+    DO j = 1, nvars
+        w0 = 0.0D0
+        IF(ju(j) /= 0) THEN
+            IF(beta_ju(j) /= 0) THEN
+                beta(j) = beta(j) * c / xnorm(j)
+                CALL logitIntercept(nobs, x(:, j), y, beta(j), maxit, eps, w0)
+                beta0(j) = w0
+            ELSE
+                beta(j) = r(j) / xnorm(j)
+            END IF
+            fit(:, j) = x(:, j) * beta(j) + beta0(j)
+        END IF
+    END DO
+END SUBROUTINE betalogFIT
+
+
+

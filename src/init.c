@@ -13,58 +13,66 @@
 /* .Fortran calls */
 extern void F77_NAME(loofit)(void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(traverse_zigzag)(void *, void *, void *, void *, void *, void *, void *);
-extern void F77_NAME(sunicoldstart)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(suniztnet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(sunilanet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(sunisrnet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(suniztlognet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(sunilalognet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(sunisrlognet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(suniwalpha)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(lslassonet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(soft_unilassonet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loofit_ts)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loofit_s)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loofit_st)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void F77_NAME(adasuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(getlambdagauss)(void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(getlambdabinom)(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void F77_NAME(getzt)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void F77_NAME(getla)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(getzt)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(getla)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(getsr)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(getztlog)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(getlalog)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void F77_NAME(getsrlog)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(septhresh)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(logsuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(coxnet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(coxsuninet)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loglike)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(loofit_binom)(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void F77_NAME(cgsep)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(betafit)(void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void F77_NAME(gridindexla)(void *, void *, void *, void *, void *);
+extern void F77_NAME(betalogfit)(void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_FortranMethodDef FortranEntries[] = {
     {"loofit",        (DL_FUNC) &F77_NAME(loofit),        8},
     {"traverse_zigzag", (DL_FUNC) &F77_NAME(traverse_zigzag), 7},
-    {"sunicoldstart", (DL_FUNC) &F77_NAME(sunicoldstart), 28},
     {"suniztnet",     (DL_FUNC) &F77_NAME(suniztnet),     28},
     {"sunilanet",    (DL_FUNC) &F77_NAME(sunilanet),      26},
     {"sunisrnet",    (DL_FUNC) &F77_NAME(sunisrnet),      26},
+    {"suniztlognet",     (DL_FUNC) &F77_NAME(suniztlognet),     28},
+    {"sunilalognet",    (DL_FUNC) &F77_NAME(sunilalognet),      26},
+    {"sunisrlognet",    (DL_FUNC) &F77_NAME(sunisrlognet),      26},
     {"suniwalpha",    (DL_FUNC) &F77_NAME(suniwalpha),    28},
     {"lslassonet",    (DL_FUNC) &F77_NAME(lslassonet),    25},
     {"soft_unilassonet", (DL_FUNC) &F77_NAME(soft_unilassonet), 26},
     {"loofit_ts",     (DL_FUNC) &F77_NAME(loofit_ts),     11},
     {"loofit_s",      (DL_FUNC) &F77_NAME(loofit_s),      11},
     {"loofit_st",     (DL_FUNC) &F77_NAME(loofit_st),     10},
-    {"adasuniNET",    (DL_FUNC) &F77_NAME(adasuninet),    28},
     {"getlambdagauss",     (DL_FUNC) &F77_NAME(getlambdagauss),     8},
     {"getlambdabinom",     (DL_FUNC) &F77_NAME(getlambdabinom),     8},
-    {"getzt",         (DL_FUNC) &F77_NAME(getzt),         15},
-    {"getla",         (DL_FUNC) &F77_NAME(getla),         13},
+    {"getzt",         (DL_FUNC) &F77_NAME(getzt),         14},
+    {"getla",         (DL_FUNC) &F77_NAME(getla),         12},
+    {"getsr",         (DL_FUNC) &F77_NAME(getsr),         12},
+    {"getztlog",      (DL_FUNC) &F77_NAME(getztlog),      14},
+    {"getlalog",      (DL_FUNC) &F77_NAME(getlalog),      12},
+    {"getsrlog",      (DL_FUNC) &F77_NAME(getsrlog),      12},
     {"septhresh",     (DL_FUNC) &F77_NAME(septhresh),     28},
     {"logsuninet",    (DL_FUNC) &F77_NAME(logsuninet),    28},
     {"coxnet",        (DL_FUNC) &F77_NAME(coxnet),    28},
     {"coxsuninet",    (DL_FUNC) &F77_NAME(coxsuninet),    30},
     {"loglike",       (DL_FUNC) &F77_NAME(loglike),       11},
     {"loofit_binom",  (DL_FUNC) &F77_NAME(loofit_binom),  8},
-    {"cgsep",         (DL_FUNC) &F77_NAME(cgsep),         29},
     {"betafit",       (DL_FUNC) &F77_NAME(betafit),       9},
-    {"gridindexla",   (DL_FUNC) &F77_NAME(gridindexla),   5},
+    {"betalogfit",    (DL_FUNC) &F77_NAME(betalogfit),    9},
     {NULL, NULL, 0}
 };
 

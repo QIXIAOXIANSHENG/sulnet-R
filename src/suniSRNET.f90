@@ -71,19 +71,15 @@ SUBROUTINE suniSRNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nsum,&
         jerr = 10000
         RETURN
     END IF
+    IF (MAXVAL(pf3) <= 0.0D0) THEN
+        jerr = 10000
+        RETURN
+    END IF
     pf = MAX(0.0D0, pf)
     pf2 = MAX(0.0D0, pf2)
     pf3 = MAX(0.0D0, pf3)
     CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
     CALL gridIndexSR(nsum, nrate, usum, urate, ind)
-    IF (isd == 1) THEN
-        DO l = 1, nvars
-            IF(ju(l) /= 0)  THEN
-                pf3(l) = pf3(l) / xnorm(l)
-                pf(l) = pf(l) / xnorm(l)
-            END IF
-        END DO
-    END IF
     CALL suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         & pmax, nsum, nrate, usum, urate, eps, maxit, napenalty, theta0, &
         & theta, itheta, ntheta, apenalty, npass, ind, intr, jerr)
@@ -219,7 +215,7 @@ SUBROUTINE suniSRNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
                 dif = 0.0D0
                 DO k = 1, nvars
                     IF (ju(k) /= 0) THEN
-                         oldt = t(k)
+                        oldt = t(k)
                         u = DOT_PRODUCT(r, x(:, k))
                         u = maj(k) * t(k) + u/DBLE(nobs)
                         pospenalty = zeta * pf(k)

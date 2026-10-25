@@ -13,14 +13,21 @@ suniSRpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, intr
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
 
-  lam <- getsrR(nobs, nvars, nsum, nrate, f, y, usum, urate, pf, flmins, flminr, isd, intr)
+  lam <- getsrR(
+    nobs, nvars, nsum, nrate, f, y, usum,
+    urate, pf, flmins, flminr, intr,
+    family = "gaussian"
+  )
   usum <- as.double(lam$usum)
   urate <- as.double(sort(lam$urate))
 
   fit <- .Fortran("suniSRNET", lam2, nobs, nvars, f, y, jd, pf, pf2, pf3, pmax,
-    nsum = nsum, nrate = nrate, usum = usum, urate = urate, eps, isd, intr, maxit,
+    nsum = nsum, nrate = nrate, usum = usum, urate = urate,
+    eps, isd, intr, maxit,
     napenalty = integer(1),
-    theta0 = double(1 * nsum * nrate), theta = double(pmax * nsum * nrate), itheta = integer(pmax * nsum * nrate), ntheta = integer(nsum * nrate), apenalty = double(nsum * nrate * 2), npass = integer(1), jerr = integer(1),
+    theta0 = double(1 * nsum * nrate), theta = double(pmax * nsum * nrate),
+    itheta = integer(pmax * nsum * nrate), ntheta = integer(nsum * nrate),
+    apenalty = double(nsum * nrate * 2), npass = integer(1), jerr = integer(1),
     PACKAGE = "sulnet"
   )
   output <- getoutputSR(fit, maxit, pmax, nvars, vnames)

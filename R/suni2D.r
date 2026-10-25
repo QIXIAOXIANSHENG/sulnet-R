@@ -418,21 +418,41 @@ suni2D <- function(
     jd <- as.integer(0)
   }
 
-  fit <- switch(method,
-    zeta_tau = suniZTpath(
-      x, y, nzeta, ntau, flminz, flmint, uzeta,
-      utau, isd, intr, beta, beta_ju, eps, pmax, jd, pf1, pf2, pf3,
-      maxit, lam2, nobs, nvars, vnames
+  fit <- switch(family,
+    gaussian = switch(method,
+      zeta_tau = suniZTpath(
+        x, y, nzeta, ntau, flminz, flmint, uzeta,
+        utau, isd, intr, beta, beta_ju, eps, pmax, jd, pf1, pf2, pf3,
+        maxit, lam2, nobs, nvars, vnames
+      ),
+      lambda_alpha = suniLApath(
+        x, y, nlambda, nalpha, flminl, flmina,
+        ulambda, ualpha, isd, intr, beta, beta_ju, eps, pmax, jd, pf1,
+        pf2, pf3, maxit, lam2, nobs, nvars, vnames
+      ),
+      sum_rate = suniSRpath(
+        x, y, nsum, nrate, flmins, flminr, usum,
+        urate, isd, intr, beta, beta_ju, eps, pmax, jd, pf1, pf2, pf3,
+        maxit, lam2, nobs, nvars, vnames
+      )
     ),
-    lambda_alpha = suniLApath(
-      x, y, nlambda, nalpha, flminl, flmina,
-      ulambda, ualpha, isd, intr, beta, beta_ju, eps, pmax, jd, pf1,
-      pf2, pf3, maxit, lam2, nobs, nvars, vnames
-    ),
-    sum_rate = suniSRpath(
-      x, y, nsum, nrate, flmins, flminr, usum,
-      urate, isd, intr, beta, beta_ju, eps, pmax, jd, pf1, pf2, pf3,
-      maxit, lam2, nobs, nvars, vnames
+    binomial = switch(method,
+      zeta_tau = suniZTlogpath(
+        x, y, nzeta, ntau, flminz, flmint, uzeta,
+        utau, isd, intr, beta, beta_ju, eps, pmax, jd, pf1, pf2, pf3,
+        maxit, lam2, nobs, nvars, vnames
+      ),
+      lambda_alpha = suniLAlogpath(
+        x, y, nlambda, nalpha, flminl, flmina,
+        ulambda, ualpha, isd, intr, beta, beta_ju, eps, pmax, jd, pf1,
+        pf2, pf3, maxit, lam2, nobs, nvars, vnames
+      ),
+      sum_rate = suniSRlogpath(
+        x, y, nsum, nrate, flmins, flminr, usum,
+        urate, isd, intr, beta, beta_ju, eps, pmax, jd, pf1,
+        pf2, pf3,
+        maxit, lam2, nobs, nvars, vnames
+      )
     )
   )
 
