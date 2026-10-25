@@ -6,6 +6,11 @@ suniZTlogpath <- function(
   isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2,
   nobs, nvars, vnames
 ) {
+  y <- as.factor(y)
+  y <- c(-1, 1)[as.numeric(y)]
+  if (!all(y %in% c(-1, 1))) {
+    stop("y should be a factor with two levels")
+  }
   y <- as.double(y)
   storage.mode(x) <- "double"
 

@@ -13,7 +13,10 @@ suniLApath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha, is
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
 
-  lam <- getlaR(nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha, pf, flmin, flmina, isd, intr)
+  lam <- getlaR(
+    nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha,
+    pf, flmin, flmina, intr, family = "gaussian"
+  )
   ulambda <- as.double(lam$ulambda)
   ualpha <- as.double(sort(lam$ualpha))
 

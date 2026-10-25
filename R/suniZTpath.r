@@ -17,7 +17,10 @@ suniZTpath <- function(
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
 
-  lam <- getztR(nobs, nvars, nzeta, ntau, f, y, uzeta, utau, pf, flminz, flmint, isd, intr, family = "gaussian")
+  lam <- getztR(
+    nobs, nvars, nzeta, ntau, f, y, uzeta, utau,
+    pf, flminz, flmint, intr, family = "gaussian"
+  )
   uzeta <- as.double(lam$uzeta)
   utau <- as.double(lam$utau)
   diffz <- as.double(lam$diffz)
