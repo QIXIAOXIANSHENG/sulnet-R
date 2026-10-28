@@ -1,4 +1,6 @@
-#' @method coef sunipath
+#' @importFrom methods rbind2
+#' @import Matrix
+#' @method coef sunilogpath
 #' @export
 coef.sunilogpath <- function(
   object, penalty1 = NULL, penalty2 = NULL,

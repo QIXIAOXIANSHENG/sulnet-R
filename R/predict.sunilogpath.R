@@ -1,4 +1,4 @@
-#' @method predict sunipath
+#' @method predict sunilogpath
 #' @export
 predict.sunilogpath <- function(
   object, newx, penalty1 = NULL,
