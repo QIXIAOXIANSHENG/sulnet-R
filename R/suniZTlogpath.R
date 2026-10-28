@@ -66,6 +66,6 @@ suniZTlogpath <- function(
     beta = betaFIT$beta,
     beta0 = betaFIT$beta0
   )
-  class(outlist) <- c("sunipath")
+  class(outlist) <- c("sunilogpath")
   return(outlist)
 }

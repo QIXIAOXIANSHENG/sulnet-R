@@ -14,6 +14,7 @@ nrate <- as.integer(5)
 x <- matrix(rnorm(nobs * nvars), nrow = nobs, ncol = nvars)
 storage.mode(x) <- "double"
 y <- as.double(rnorm(nobs)) + x %*% rep(c(2, 0), each = nvars / 2)
+ybinom <- rbinom(nobs, 1, 1 / (1 + exp(-y)))
 pf <- as.double(rep(1, nvars))
 pf2 <- as.double(rep(1, nvars))
 pf3 <- as.double(rep(1, nvars))
@@ -416,12 +417,14 @@ foldid <- sample(rep(seq(nfolds), length = N))
 outlist <- as.list(seq(nfolds))
 for (i in seq(nfolds)) {
   which <- foldid == i
-  y_sub <- y[!which]
+  y_sub <- ybinom[!which]
   args <- c(
     list(x = x[!which, , drop = FALSE], y = y_sub, method = method),
-    setNames(pen, strsplit(method, "_")[[1]])
+    setNames(pen, strsplit(method, "_")[[1]]),
+    family = "binomial"
   )
   outlist[[i]] <- do.call(suni2D, args)
+  class(outlist[[i]]) <- c("suni2D", "sunipath")
 }
 fun <- paste("cv", class(suni2D.object)[[2]], sep = ".")
 cvstuff <- do.call(fun, list(
@@ -470,3 +473,7 @@ x <- matrix(rnorm(nobs * nvars), nobs, nvars)
 y <- rnorm(nobs)
 
 cvfit <- cv.sulnet2D(x, y, nfolds = 5)
+
+
+logfitzt <- suni2D(x, ybinom, beta, family = "binomial")
+logfitzt <- suni2D(x, ybinom, family = "binomial")

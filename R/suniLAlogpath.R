@@ -1,7 +1,11 @@
 #' @import Matrix
 #' @importFrom stats median
 
-suniLAlogpath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2, nobs, nvars, vnames) {
+suniLAlogpath <- function(
+  x, y, nlambda, nalpha, flmin, flmina,
+  ulambda, ualpha, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3,
+  maxit, lam2, nobs, nvars, vnames
+) {
   y <- as.factor(y)
   y <- c(-1, 1)[as.numeric(y)]
   if (!all(y %in% c(-1, 1))) {
@@ -13,22 +17,35 @@ suniLAlogpath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha,
   medpj <- median(abs(beta[beta_ju != 0]))
   if (is.na(medpj)) medpj <- as.double(1)
 
-  betaFIT <- .Fortran("betalogFIT", as.integer(nobs), as.integer(nvars), x, y, beta0 = double(nvars), beta = beta, beta_ju, medpj, fit = double(nobs * nvars), PACKAGE = "sulnet")
+  betaFIT <- .Fortran("betalogFIT",
+    as.integer(nobs), as.integer(nvars), x, y,
+    beta0 = double(nvars), beta = beta, beta_ju, medpj,
+    fit = double(nobs * nvars),
+    PACKAGE = "sulnet"
+  )
 
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
 
   lam <- getlaR(
     nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha,
-    pf, flmin, flmina, intr, family = "binomial"
+    pf, flmin, flmina, intr,
+    family = "binomial"
   )
   ulambda <- as.double(lam$ulambda)
   ualpha <- as.double(sort(lam$ualpha))
 
-  fit <- .Fortran("suniLAlogNET", lam2, nobs, nvars, f, y, jd, pf, pf2, pf3, pmax,
-    nlambda = nlambda, nalpha = nalpha, ulambda = ulambda, ualpha = ualpha, eps, isd, intr, maxit,
+  fit <- .Fortran("suniLAlogNET",
+    lam2, nobs, nvars, f, y, jd, pf, pf2, pf3, pmax,
+    nlambda = nlambda, nalpha = nalpha, ulambda = ulambda, ualpha = ualpha,
+    eps, isd, intr, maxit,
     napenalty = integer(1),
-    theta0 = double(1 * nlambda * nalpha), theta = double(pmax * nlambda * nalpha), itheta = integer(pmax * nlambda * nalpha), ntheta = integer(nlambda * nalpha), apenalty = double(nlambda * nalpha * 2), npass = integer(1), jerr = integer(1),
+    theta0 = double(1 * nlambda * nalpha),
+    theta = double(pmax * nlambda * nalpha),
+    itheta = integer(pmax * nlambda * nalpha),
+    ntheta = integer(nlambda * nalpha),
+    apenalty = double(nlambda * nalpha * 2), npass = integer(1),
+    jerr = integer(1),
     PACKAGE = "sulnet"
   )
   output <- getoutputLA(fit, maxit, pmax, nvars, vnames)
@@ -55,6 +72,6 @@ suniLAlogpath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha,
     beta = betaFIT$beta,
     beta0 = betaFIT$beta0
   )
-  class(outlist) <- c("sunipath")
+  class(outlist) <- c("sunilogpath")
   return(outlist)
 }

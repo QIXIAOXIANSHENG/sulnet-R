@@ -39,7 +39,10 @@ suni2D(
 \item{x}{Predictor matrix with observations in rows and predictors in
 columns; coerced to a dense matrix by the fitting function.}
 
-\item{y}{Response with one observation per row of \code{x}.}
+\item{y}{Response with one observation per row of \code{x}. For
+\code{family = "binomial"}, any two-class vector (numeric, logical,
+character, or factor) without missing values; it is converted to a factor
+and the first level is coded -1 and the second +1.}
 
 \item{beta}{Optional prior weights: a two-element list of predictor indices
 and values, or a length-p vector. List indices are clamped to [1, p] and
@@ -48,9 +51,9 @@ duplicate indices rejected. Zero priors fall back to data-derived slopes.}
 \item{method}{Penalty parameterization: \code{"zeta_tau"},
 \code{"lambda_alpha"}, or \code{"sum_rate"}. Default is \code{"zeta_tau"}.}
 
-\item{family}{Accepted label, \code{"gaussian"} or \code{"binomial"}.
-Currently both labels dispatch to the same least-squares grid routines;
-this argument does not select a binomial solver.}
+\item{family}{Response family, \code{"gaussian"} or \code{"binomial"}.
+\code{"gaussian"} uses the least-squares grid routines; \code{"binomial"}
+uses the logistic first-stage fit and logistic grid routines.}
 
 \item{nzeta}{Requested number of automatically generated zeta values; default
 100. Ignored when \code{zeta} or other \code{method} is supplied.}

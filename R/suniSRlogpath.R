@@ -1,7 +1,11 @@
 #' @import Matrix
 #' @importFrom stats median
 
-suniSRlogpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit, lam2, nobs, nvars, vnames) {
+suniSRlogpath <- function(
+  x, y, nsum, nrate, flmins, flminr, usum,
+  urate, isd, intr, beta, beta_ju, eps, pmax, jd, pf, pf2, pf3, maxit,
+  lam2, nobs, nvars, vnames
+) {
   y <- as.factor(y)
   y <- c(-1, 1)[as.numeric(y)]
   if (!all(y %in% c(-1, 1))) {
@@ -13,7 +17,12 @@ suniSRlogpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, i
   medpj <- median(abs(beta[beta_ju != 0]))
   if (is.na(medpj)) medpj <- as.double(1)
 
-  betaFIT <- .Fortran("betalogFIT", as.integer(nobs), as.integer(nvars), x, y, beta0 = double(nvars), beta = beta, beta_ju, medpj, fit = double(nobs * nvars), PACKAGE = "sulnet")
+  betaFIT <- .Fortran("betalogFIT", as.integer(nobs),
+    as.integer(nvars), x, y,
+    beta0 = double(nvars), beta = beta, beta_ju, medpj,
+    fit = double(nobs * nvars),
+    PACKAGE = "sulnet"
+  )
 
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
@@ -26,7 +35,8 @@ suniSRlogpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, i
   usum <- as.double(lam$usum)
   urate <- as.double(sort(lam$urate))
 
-  fit <- .Fortran("suniSRlogNET", lam2, nobs, nvars, f, y, jd, pf, pf2, pf3, pmax,
+  fit <- .Fortran("suniSRlogNET",
+    lam2, nobs, nvars, f, y, jd, pf, pf2, pf3, pmax,
     nsum = nsum, nrate = nrate, usum = usum, urate = urate,
     eps, isd, intr, maxit,
     napenalty = integer(1),
@@ -59,6 +69,6 @@ suniSRlogpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, i
     beta = betaFIT$beta,
     beta0 = betaFIT$beta0
   )
-  class(outlist) <- c("sunipath")
+  class(outlist) <- c("sunilogpath")
   return(outlist)
 }
