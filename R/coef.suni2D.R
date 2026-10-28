@@ -33,15 +33,3 @@ coef.suni2D <- function(
 ) {
   NextMethod("coef")
 }
-
-#' Extract model coefficients
-#'
-#' Dispatch to the method associated with the class of the fitted object.
-#'
-#' @param object Fitted model object.
-#' @param ... Additional arguments passed to the selected method.
-#'
-#' @return The value returned by the selected method; see the corresponding
-#'   class method for coefficient scales and dimensions.
-#' @export
-coef <- function(object, ...) UseMethod("coef")

@@ -13,6 +13,7 @@
 #' @return The next method's result: a coefficient matrix or a list of
 #'   matrices, or nonzero-index lists. Intercepts, when present, occupy the
 #'   first row. Coefficient scale and grid selection follow the path method.
+#' @importFrom stats coef
 #' @method coef sulnet
 #' @export
 coef.sulnet <- function(object, s = NULL,
@@ -20,15 +21,3 @@ coef.sulnet <- function(object, s = NULL,
                         ...) {
   NextMethod("coef")
 }
-
-#' Extract model coefficients
-#'
-#' Dispatch to the method associated with the class of the fitted object.
-#'
-#' @param object Fitted model object.
-#' @param ... Additional arguments passed to the selected method.
-#'
-#' @return The value returned by the selected method; see the corresponding
-#'   class method for coefficient scales and dimensions.
-#' @export
-coef <- function(object, ...) UseMethod("coef")

@@ -27,21 +27,10 @@
 #' newx <- matrix(rnorm(nobs * nvars), nobs, nvars)
 #' predict(fit, newx)
 #'
+#' @importFrom stats predict
 #' @method predict sulnet
 #' @export
 predict.sulnet <- function(object, newx, s = NULL, type = c("class", "link"),
                            ...) {
   NextMethod("predict")
 }
-
-#' Predict from a fitted model
-#'
-#' Dispatch to the method associated with the class of the fitted object.
-#'
-#' @param object Fitted model object.
-#' @param ... Additional arguments passed to the selected method.
-#'
-#' @return The value returned by the selected method; see the corresponding
-#'   class method for coefficient scales and dimensions.
-#' @export
-predict <- function(object, ...) UseMethod("predict")
