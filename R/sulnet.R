@@ -59,7 +59,7 @@
 #'     \item{call}{The matched function call.}
 #'   }
 #' @export
-#' @useDynLib sulnet, .registration = TRUE
+#' @useDynLib sulnet, .registration = TRUE, .fixes = "C_"
 sulnet <- function(x, y, nlambda = 100,
                    method = c("ls"),
                    lambda.factor = ifelse(nobs < nvars, 0.01, 1e-04),

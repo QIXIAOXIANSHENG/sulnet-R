@@ -3,8 +3,11 @@
 #' Aggregate squared-error validation losses from already fitted training-fold
 #' models over a two-dimensional penalty grid.
 #'
-#' @details Missing predictions from truncated paths are omitted from the loss
-#'   averages and standard-error calculations.
+#' @details A grid cell with a missing prediction in any fold (a cell that
+#'   fold's fit did not compute) gets NA in both \code{cvm} and \code{cvsd}.
+#'   \code{cvsd} is the per-observation standard error
+#'   \eqn{\sqrt{\operatorname{mean}_i (L_i - \mathrm{cvm})^2 / (N - 1)}}, not a
+#'   per-fold one. This scorer is called by \code{cv.suni2D}.
 #'
 #' @param outlist List of fitted training-fold models, indexed by fold number.
 #' @param method Character string naming the two penalty coordinates, separated
@@ -22,6 +25,7 @@
 #'   \code{name}. The first two components are matrices with second-coordinate
 #'   values in rows and first-coordinate values in columns.
 #'
+#' @keywords internal
 #' @export
 cv.sunipath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
   typenames <- c(
@@ -62,14 +66,13 @@ cv.sunipath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
   N <- lapply(predmatlist, function(predmat) {
     length(y) - apply(is.na(predmat), 2, sum)
   })
+  ## A cell missing from any fold gets an NA loss instead of an average over
+  ## the folds that reached it, so it cannot be compared with complete cells.
   cvm <- lapply(cvraw, function(x) {
-    apply(x, 2, mean, na.rm = TRUE)
+    apply(x, 2, mean)
   })
   cvsd <- lapply(seq_along(cvraw), function(x) {
-    sqrt(apply(scale(cvraw[[x]], cvm[[x]], FALSE)^2,
-      2, mean,
-      na.rm = TRUE
-    ) / (N[[x]] - 1))
+    sqrt(apply(scale(cvraw[[x]], cvm[[x]], FALSE)^2, 2, mean) / (N[[x]] - 1))
   })
   cvm <- do.call(rbind, cvm)
   cvsd <- do.call(rbind, cvsd)

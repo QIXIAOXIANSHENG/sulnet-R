@@ -145,6 +145,9 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
 
     DOUBLE PRECISION :: d
     DOUBLE PRECISION :: dif
+    DOUBLE PRECISION :: thr
+    DOUBLE PRECISION :: nulldev
+    DOUBLE PRECISION :: ybar
     DOUBLE PRECISION :: oldt
     DOUBLE PRECISION :: u
     DOUBLE PRECISION :: zeta
@@ -181,6 +184,18 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
 
     maj = 2.0D0*maj
 
+    ! convergence threshold: eps times the null deviance per observation
+    ! (variance of y, or mean of y**2 without intercept), so that the
+    ! stopping rule does not depend on the scale of y
+    IF (intr == 1) THEN
+        ybar = SUM(y)/DBLE(nobs)
+        nulldev = SUM((y - ybar)**2)/DBLE(nobs)
+    ELSE
+        nulldev = SUM(y**2)/DBLE(nobs)
+    END IF
+    IF (nulldev <= 0.0D0) nulldev = 1.0D0
+    thr = eps*nulldev
+
     DO l = 1, npenalty
         iz = ind(l, 1)
         it = ind(l, 2)
@@ -193,7 +208,11 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         mm = 0
         r = y
         ni = 0
-        IF(prevz > 0 .AND. prevt > 0) THEN
+        ! a predecessor skipped for exceeding pmax gives no warm start
+        IF (prevz > 0 .AND. prevt > 0) THEN
+            IF (ntheta(prevz, prevt) < 0) prevz = 0
+        END IF
+        IF (prevz > 0 .AND. prevt > 0) THEN
             ni = ntheta(prevz, prevt)
             t(0) = theta0(1, prevz, prevt)
             r = r - t(0)
@@ -251,7 +270,7 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
                         dif = MAX(dif, d**2)
                     END IF
                 END IF
-                IF (dif < eps) EXIT
+                IF (dif < thr) EXIT
                 IF (npass > maxit) THEN
                     jerr = -l
                     RETURN
@@ -288,7 +307,7 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
                             dif = MAX(dif, d**2)
                         END IF
                     END IF
-                    IF (dif < eps) EXIT
+                    IF (dif < thr) EXIT
                     IF (npass > maxit) THEN
                         jerr = -l
                         RETURN
@@ -298,9 +317,9 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
             IF (ni > pmax) EXIT
             !-------- FINAL CHECK -------- !
             vrg = 1
-            IF ((t(0) - oldtheta(0))**2 >= eps) vrg = 0
+            IF ((t(0) - oldtheta(0))**2 >= thr) vrg = 0
             DO j = 1, ni
-                IF ((t(itheta(j, iz, it)) - oldtheta(itheta(j, iz, it)))**2 >= eps) THEN
+                IF ((t(itheta(j, iz, it)) - oldtheta(itheta(j, iz, it)))**2 >= thr) THEN
                     vrg = 0
                     EXIT
                 END IF
@@ -309,8 +328,9 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         END DO
         ! -------- FINAL UPDATE & SAVE RESULTS -------- !
         IF (ni > pmax) THEN
-            jerr = -10000 - l
-            EXIT
+            ! skip this cell and continue the grid; R reports the first skip
+            IF (jerr == 0) jerr = -10000 - l
+            ni = -1
         END IF
         IF (ni > 0) theta(1:ni, iz, it) = t(itheta(1:ni, iz, it))
         ntheta(iz, it) = ni

@@ -78,7 +78,7 @@ gam <- theta2gamma(output, betaFIT)
 
 
 
-lam <- getlaR(nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha, pf, flmin, flmina, isd, intr)
+lam <- getlaR(nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha, pf, flmin, flmina, isd, intr, family = "gaussian")
 ulambda <- as.double(lam$ulambda)
 ualpha <- as.double(sort(lam$ualpha))
 fit <- .Fortran("suniLANET", lam2, nobs, nvars, f, y, jd, pf, pf2, pf3, pmax,
@@ -94,7 +94,7 @@ gam <- theta2gamma(output, betaFIT)
 # storage.mode(ind) <- "integer"
 
 
-lam <- getsrR(nobs, nvars, nsum, nrate, f, y, usum, urate, pf, flmins, flminr, isd, intr)
+lam <- getsrR(nobs, nvars, nsum, nrate, f, y, usum, urate, pf, flmins, flminr, isd, intr, family = "gaussian")
 usum <- as.double(lam$usum)
 urate <- as.double(sort(lam$urate))
 
@@ -372,7 +372,7 @@ if (is.na(medpj)) medpj <- as.double(1)
 betaFIT <- .Fortran("betaFIT", as.integer(nobs), as.integer(nvars), x, y, beta0 = double(nvars), beta = beta, beta_ju, medpj, fit = double(nobs * nvars), PACKAGE = "sulnet")
 f <- matrix(betaFIT$fit, nobs, nvars)
 storage.mode(f) <- "double"
-lam <- getlaR(nobs, nvars, nzeta, ntau, f, y, uzeta, utau, pf, flminz, flmint, isd, intr)
+lam <- getlaR(nobs, nvars, nzeta, ntau, f, y, uzeta, utau, pf, flminz, flmint, isd, intr, family = "gaussian")
 getzt <- .Fortran(
   "getzt", nobs, nvars, nzeta, ntau,
   uzeta = uzeta, utau = utau,

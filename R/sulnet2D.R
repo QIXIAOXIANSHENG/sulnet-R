@@ -90,7 +90,7 @@
 #'     \item{call}{The matched function call.}
 #'   }
 #' @export
-#' @useDynLib sulnet, .registration = TRUE
+#' @useDynLib sulnet, .registration = TRUE, .fixes = "C_"
 sulnet2D <- function(x, y, nlambda = 100,
                      method = c(
                        "suni_2", "septhresh"

@@ -94,20 +94,30 @@ getlambdaR <- function(
   ulam
 }
 
+## Penalty factors for the automatic grids: excluded predictors never enter the
+## fit, so they must not set the top of the grid. jd is the native exclusion
+## vector, 0 or c(number excluded, indices).
+gridpf <- function(pf, jd) {
+  if (jd[1L] > 0L) {
+    pf[jd[-1L]] <- 0
+  }
+  pf
+}
+
 getztR <- function(
   nobs, nvars, nzeta, ntau, x, y,
-  uzeta, utau, pf, flminz, flmint, intr, family
+  uzeta, utau, pf, flminz, flmint, isd, intr, family
 ) {
   getzt <- switch(family,
     gaussian = .Fortran("getzt", nobs, nvars, nzeta, ntau,
       uzeta = uzeta, utau = utau,
-      x, y, pf, flminz, flmint, intr,
+      x, y, pf, flminz, flmint, isd, intr,
       diffz = double(1), difft = double(1),
       PACKAGE = "sulnet"
     ),
     binomial = .Fortran("getztlog", nobs, nvars, nzeta, ntau,
       uzeta = uzeta, utau = utau, x, y, pf, flminz,
-      flmint, intr, diffz = double(1), difft = double(1),
+      flmint, isd, intr, diffz = double(1), difft = double(1),
       PACKAGE = "sulnet"
     )
   )
@@ -123,16 +133,16 @@ getztR <- function(
 
 getlaR <- function(
   nobs, nvars, nlambda, nalpha, x, y,
-  ulambda, ualpha, pf, flmin, flmina, intr, family
+  ulambda, ualpha, pf, flmin, flmina, isd, intr, family
 ) {
   getla <- switch(family,
     gaussian = .Fortran("getla", nobs, nvars, nlambda, nalpha,
       ulambda = ulambda, ualpha = ualpha, x,
-      y, pf, flmin, flmina, intr, PACKAGE = "sulnet"
+      y, pf, flmin, flmina, isd, intr, PACKAGE = "sulnet"
     ),
     binomial = .Fortran("getlalog", nobs, nvars, nlambda, nalpha,
       ulambda = ulambda, ualpha = ualpha, x,
-      y, pf, flmin, flmina, intr, PACKAGE = "sulnet"
+      y, pf, flmin, flmina, isd, intr, PACKAGE = "sulnet"
     )
   )
   ulambda <- as.double(getla$ulambda)
@@ -144,16 +154,16 @@ getlaR <- function(
 
 getsrR <- function(
   nobs, nvars, nsum, nrate, x, y,
-  usum, urate, pf, flmins, flminr, intr, family
+  usum, urate, pf, flmins, flminr, isd, intr, family
 ) {
   getsr <- switch(family,
     gaussian = .Fortran("getsr", nobs, nvars, nsum, nrate,
       usum = usum, urate = urate, x,
-      y, pf, flmins, flminr, intr, PACKAGE = "sulnet"
+      y, pf, flmins, flminr, isd, intr, PACKAGE = "sulnet"
     ),
     binomial = .Fortran("getsrlog", nobs, nvars, nsum, nrate,
       usum = usum, urate = urate, x,
-      y, pf, flmins, flminr, intr, PACKAGE = "sulnet"
+      y, pf, flmins, flminr, isd, intr, PACKAGE = "sulnet"
     )
   )
   usum <- as.double(getsr$usum)

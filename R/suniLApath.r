@@ -15,7 +15,8 @@ suniLApath <- function(x, y, nlambda, nalpha, flmin, flmina, ulambda, ualpha, is
 
   lam <- getlaR(
     nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha,
-    pf, flmin, flmina, intr, family = "gaussian"
+    gridpf(pf, jd), flmin, flmina, isd, intr,
+    family = "gaussian"
   )
   ulambda <- as.double(lam$ulambda)
   ualpha <- as.double(sort(lam$ualpha))

@@ -24,16 +24,20 @@ are requested. \code{NULL} uses the fitted grid.}
 \item{type}{Coefficient output requested: \code{"coefficients"},
 \code{"nonzero"}, or \code{"inner"}.}
 
-\item{...}{Additional arguments passed to \code{coef.sunipath}.}
+\item{...}{Additional arguments passed to \code{coef.sunipath} or
+\code{coef.sunilogpath}.}
 }
 \value{
-For Gaussian fits, the value returned by \code{coef.sunipath}.
-  Binomial fits currently return \code{NULL}.
+The value returned by \code{coef.sunipath} (Gaussian) or
+  \code{coef.sunilogpath} (binomial): for \code{type = "coefficients"}, a
+  list with one sparse matrix per second-coordinate value, with the
+  intercept in the first row and the requested first-coordinate values in
+  columns.
 }
 \description{
 Extract coefficients from a fitted two-dimensional univariate-guided model.
-Gaussian fits delegate coefficient extraction to \code{coef.sunipath}.
-Coefficient extraction for binomial fits is not yet implemented.
+Gaussian fits delegate coefficient extraction to \code{coef.sunipath} and
+binomial fits to \code{coef.sunilogpath}; both work the same way.
 }
 \examples{
 set.seed(1)

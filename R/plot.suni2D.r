@@ -55,7 +55,12 @@ plot.suni2D <- function(x, xvar = c("penalty", "norm"), yvar = c("final_coef", "
     gamma <- gammaall[[i]]
     df <- dfall[, i]
     which <- nonzero(gamma)
-    gamma <- as.matrix(gamma[which, ])
+    if (length(which) == 0L) {
+      ## no active predictor anywhere on this path: draw a flat zero line
+      gamma <- matrix(0, 1L, ncol(gamma))
+    } else {
+      gamma <- as.matrix(gamma[which, , drop = FALSE])
+    }
     switch(xvar,
       norm = {
         index <- apply(abs(gamma), 2, sum)
@@ -101,7 +106,7 @@ plot.suni2D <- function(x, xvar = c("penalty", "norm"), yvar = c("final_coef", "
       rule = 2
     )$y)
     axis(3, at = atdf, labels = prettydf, cex.axis = 1, tcl = NA)
-    if (label) {
+    if (label && length(which) > 0L) {
       nnz <- length(which)
       xpos <- max(index)
       pos <- 4

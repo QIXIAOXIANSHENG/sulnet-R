@@ -35,6 +35,10 @@ Aggregate squared-error validation losses from already fitted training-fold
 models over a two-dimensional penalty grid.
 }
 \details{
-Missing predictions from truncated paths are omitted from the loss
-  averages and standard-error calculations.
+A grid cell with a missing prediction in any fold (a cell that
+  fold's fit did not compute) gets NA in both \code{cvm} and \code{cvsd}.
+  \code{cvsd} is the per-observation standard error
+  \eqn{\sqrt{\operatorname{mean}_i (L_i - \mathrm{cvm})^2 / (N - 1)}}, not a
+  per-fold one. This scorer is called by \code{cv.suni2D}.
 }
+\keyword{internal}

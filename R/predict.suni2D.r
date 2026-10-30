@@ -15,13 +15,16 @@
 #'   according to \code{object$method}. \code{NULL} uses the fitted grid.
 #' @param penalty2 Values of the second grid coordinate: tau, alpha, or rate
 #'   according to \code{object$method}. \code{NULL} uses the fitted grid.
-#' @param type Type forwarded to the next method. Currently only \code{links}
-#' is supported.
+#' @param type \code{"link"} (default) returns the linear predictor;
+#'   \code{"class"}, for binomial fits only, returns the predicted class
+#'   labels (the second level of the training response when the link is
+#'   positive).
 #' @param ... Additional arguments, currently unused by the path method.
 #'
-#' @return A named list of numeric matrices, one per selected second-coordinate
-#'   value, with new observations in rows and first-coordinate values in
-#'   columns.
+#' @return A named list of matrices, one per selected second-coordinate value,
+#'   with new observations in rows and first-coordinate values in columns.
+#'   They are numeric for \code{type = "link"} and hold the training class
+#'   labels for \code{type = "class"}.
 #'
 #' @examples
 #' set.seed(1)
@@ -37,8 +40,14 @@
 #' @export
 predict.suni2D <- function(
   object, newx, penalty1 = NULL,
-  penalty2 = NULL, type = c("link"),
+  penalty2 = NULL, type = c("link", "class"),
   ...
 ) {
-  NextMethod("predict")
+  ## NextMethod does not forward an unsupplied default, so pass type
+  ## explicitly; otherwise the binomial method would use its own default.
+  type <- match.arg(type)
+  if (type == "class" && !inherits(object, "sunilogpath")) {
+    stop("type = \"class\" is only available for binomial fits")
+  }
+  NextMethod("predict", type = type)
 }

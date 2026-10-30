@@ -82,7 +82,10 @@ SUBROUTINE betaFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
 
 END SUBROUTINE betaFIT
 
-SUBROUTINE betalogFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
+! Logistic version of betaFIT with y in {-1, 1}. jerr(j) is the unilogFIT code
+! for predictor j: -1 (no convergence, typically separation) keeps the last
+! iterate; 8001 or 8002 (invalid or single-class y) returns immediately.
+SUBROUTINE betalogFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit, jerr)
     ! -----------------------------------------------------------------------
     IMPLICIT NONE
     ! -------- INPUT VARIABLES -------- !
@@ -96,11 +99,11 @@ SUBROUTINE betalogFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
     DOUBLE PRECISION :: beta0(nvars)
     DOUBLE PRECISION :: beta(nvars)
     DOUBLE PRECISION :: fit(nobs, nvars)
+    INTEGER :: jerr(nvars)
     ! -------- LOCAL DECLARATIONS -------- !
     INTEGER :: j
     INTEGER :: ju(nvars)
     INTEGER, PARAMETER :: maxit = 1D5
-    INTEGER :: jerr
     INTEGER :: npass
     DOUBLE PRECISION, PARAMETER :: eps = 1.0D-8
     DOUBLE PRECISION :: r(nvars)
@@ -113,16 +116,16 @@ SUBROUTINE betalogFIT(nobs, nvars, x, y, beta0, beta, beta_ju, medpj, fit)
     DOUBLE PRECISION :: w0
 
     r = 0.0D0
+    jerr = 0
 
     CALL chkvars(nobs, nvars, x, ju)
     DO j = 1, nvars
         b = 0.0D0
         b0 = 0.0D0
         npass = 0
-        jerr = 0
         xsd = 0.0D0
-        IF (ju(j) /= 0) CALL unilogFIT(nobs, x(:, j), y, xsd, b0, b, maxit, eps, npass, jerr)
-        IF (jerr /= 0) RETURN
+        IF (ju(j) /= 0) CALL unilogFIT(nobs, x(:, j), y, xsd, b0, b, maxit, eps, npass, jerr(j))
+        IF (jerr(j) == 8001 .OR. jerr(j) == 8002) RETURN
         beta0(j) = b0
         xnorm(j) = xsd
         r(j) = b*xsd

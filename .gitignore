@@ -9,4 +9,4 @@ src/*.dll
 inst/cox tryout.RData
 .Rhistory
 cgseppath.r
-inst/agent/AGENTS.md
+archive/agent/AGENTS.md

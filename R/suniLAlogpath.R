@@ -20,16 +20,17 @@ suniLAlogpath <- function(
   betaFIT <- .Fortran("betalogFIT",
     as.integer(nobs), as.integer(nvars), x, y,
     beta0 = double(nvars), beta = beta, beta_ju, medpj,
-    fit = double(nobs * nvars),
+    fit = double(nobs * nvars), jerr = integer(nvars),
     PACKAGE = "sulnet"
   )
+  betalogcheck(betaFIT$jerr, vnames)
 
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
 
   lam <- getlaR(
     nobs, nvars, nlambda, nalpha, f, y, ulambda, ualpha,
-    pf, flmin, flmina, intr,
+    gridpf(pf, jd), flmin, flmina, isd, intr,
     family = "binomial"
   )
   ulambda <- as.double(lam$ulambda)

@@ -4,8 +4,8 @@
 #'   reconstruct coefficients on the original predictor scale.
 #'
 #' @details Consider a linear regression problem \eqn{y = X\gamma + \epsilon},
-#' where \eqn{X} is of dimension \eqn{n\times p}, \eqn{y} is a length-p vector,
-#' and \eqn{epsilon} is a length-p random noise with zero mean.
+#' where \eqn{X} is of dimension \eqn{n\times p}, \eqn{y} is a length-n vector,
+#' and \eqn{\epsilon} is a length-n random noise with zero mean.
 #'   The aim is that the sign of the coefficients \eqn{\gamma_j} to have higher
 #'   chance of conforming the underlying truth while maintaining high
 #'   prediction accuracy. As the underlying truth might not be available or the
@@ -24,6 +24,16 @@
 #'   An NA prior median is replaced by 1.
 #'   It then constructs \eqn{F_{ij} = X_{ij}\beta_j +
 #'   \beta_{0j}}, where \eqn{\beta_{0j} = \operatorname{mean}(y - X_j\beta_j)}.
+#'
+#'   For \code{family = "binomial"}, \eqn{\beta_j} and \eqn{\beta_{0j}} are the
+#'   slope and intercept of the univariate logistic regression of y on
+#'   \eqn{X_j}. If that fit does not converge (typically under separation) its
+#'   last iterate is used and a warning names the predictor. Supplied priors
+#'   \eqn{p_s} become \eqn{p_s m / (\operatorname{med}_k|p_k|\,
+#'   \operatorname{sd}(X_s))}, where \eqn{m} is the median absolute
+#'   standardized univariate logistic slope \eqn{|\beta_j \operatorname{sd}(X_j)|}
+#'   over nonconstant predictors, and their \eqn{\beta_{0s}} is the logistic
+#'   intercept fitted with that slope held fixed.
 #'   The native solver optionally centers/scales F and returns theta on its
 #'   input scale. Reconstruction uses \eqn{\gamma_j = \beta_j\theta_j} and
 #'   \eqn{\gamma_0 = \theta_0 + \sum_j \beta_{0j}\theta_j}; disabling the
@@ -32,8 +42,11 @@
 #' The general loss function is \eqn{\frac{1}{2n}\lVert y-F\theta\rVert_2^2
 #' +\zeta\sum_{j=1}^p \operatorname{pf1}_j\|\theta_j\|
 #' +\tau\sum_{j=1}^p \operatorname{pf3}_j(\theta_j)_-
-#' +\lambda_2\sum_{j=1}^p \operatorname{pf2}_j\theta_j^2,}
-#' where \eqn{(t)_-=\max(-t,0)} is the negative part. Three set of penalty
+#' +\frac{\lambda_2}{2}\sum_{j=1}^p \operatorname{pf2}_j\theta_j^2,}
+#' where \eqn{(t)_-=\max(-t,0)} is the negative part and the intercept is left
+#' out of the notation. For \code{family = "binomial"} the first term is the
+#' mean logistic loss \eqn{\frac{1}{n}\sum_i \log(1 + e^{-y_i(\theta_0 +
+#' F_i\theta)})} with \eqn{y_i \in \{-1, 1\}}. Three set of penalty
 #' formation are provided: zeta-tau, lambda-alpha, and sum-rate.
 #'
 #' In zeta-tau coordinates, the positive threshold is zeta * pf1 and the negative
@@ -41,8 +54,11 @@
 #'   lambda * (1 - alpha) * pf1 and lambda * alpha * pf3. In sum-rate coordinates
 #'   they are sum/(1 + rate) * pf1 and sum * rate/(1 + rate) * pf3. The quadratic
 #'   coordinate denominator adds lambda2 * pf2. These descriptions follow the
-#'   native updates without imposing a loss-normalization convention. When
-#'   standardized, pf1 and pf3 are also divided by the predictor scale. The
+#'   native updates without imposing a loss-normalization convention. With
+#'   \code{standardize = TRUE} the penalties act on the standardized columns of
+#'   F, so on the scale of F they are effectively multiplied by the column
+#'   scale: pf1 and pf3 by \eqn{\operatorname{sd}(F_j)} and pf2 by
+#'   \eqn{\operatorname{sd}(F_j)^2}. The
 #'   reported zeta-tau coordinates in the latter two paths assume equal side
 #'   factors: the extra negative penalty is lambda * (2 * alpha - 1), or sum *
 #'   (rate - 1)/(1 + rate). They are not a general conversion for unequal pf1 and
@@ -54,10 +70,18 @@
 #'   within each decreasing first-coordinate level. Warm starts copy a
 #'   previously computed model with componentwise stronger side penalties when
 #'   available. The returned coefficient lists use rectangular grid order;
-#'   penalty.path records the actual traversal. Positive native error codes
-#'   stop; negative codes warn and return partial output. Uncomputed grid cells
-#'   have missing intercepts and zero sparse slope placeholders. This fitter is
-#'   currently internal to the package.
+#'   penalty.path records the actual traversal of the computed cells. Positive
+#'   native error codes stop; negative codes warn and return partial output. A
+#'   cell whose active set would exceed \code{pmax} is skipped and the
+#'   traversal continues; cells that would warm-start from it start from zero.
+#'   When the total pass limit is reached the traversal stops. Uncomputed grid
+#'   cells have missing intercepts, zero sparse slope placeholders and df 0.
+#'
+#'   The first value of an automatically generated zeta grid (and of the
+#'   lambda and sum grids, which are twice the zeta grid) is the smallest
+#'   value with all coefficients zero, raised by a relative \eqn{10^{-9}} so
+#'   that rounding cannot leave a tiny nonzero coefficient. Excluded
+#'   predictors do not affect the automatic grids.
 #'
 #' @param x Predictor matrix with observations in rows and predictors in
 #'   columns; coerced to a dense matrix by the fitting function.
@@ -67,7 +91,8 @@
 #'   and the first level is coded -1 and the second +1.
 #' @param beta Optional prior weights: a two-element list of predictor indices
 #'   and values, or a length-p vector. List indices are clamped to [1, p] and
-#'   duplicate indices rejected. Zero priors fall back to data-derived slopes.
+#'   duplicate indices rejected. Zero or NA priors fall back to data-derived
+#'   slopes.
 #' @param method Penalty parameterization: \code{"zeta_tau"},
 #'   \code{"lambda_alpha"}, or \code{"sum_rate"}. Default is \code{"zeta_tau"}.
 #' @param family Response family, \code{"gaussian"} or \code{"binomial"}.
@@ -101,9 +126,11 @@
 #'   \code{NULL} requests an automatically generated grid of length \code{nsum}.
 #' @param rate Optional increasing, deduplicated rate grid with values at least
 #'   1. Infinite rates are rejected when n < p; otherwise the wrapper switches
-#'   to lambda-alpha and sets lambda to \code{sum}.
-#' @param lambda2 Nonnegative quadratic-penalty tuning parameter passed to the
-#'   solver as \code{lam2}; default zero.
+#'   to lambda-alpha with alpha = rate/(1 + rate) (1 for an infinite rate) and
+#'   lambda = \code{sum}, or an automatic lambda grid of length \code{nsum}
+#'   when \code{sum} is \code{NULL}.
+#' @param lambda2 Nonnegative quadratic-penalty tuning parameter; the penalty
+#'   is \eqn{(\lambda_2/2)\sum_j \operatorname{pf2}_j\theta_j^2}. Default zero.
 #' @param pf1 Length-p positive-side/L1 penalty factors; default ones. Negative
 #'   entries are truncated to zero by the solver and at least one positive entry
 #'   is required.
@@ -111,20 +138,33 @@
 #'   are truncated to zero and at least one positive entry is required even if
 #'   lambda2 is zero.
 #' @param pf3 Length-p negative-side penalty factors; default ones. Negative
-#'   entries are truncated to zero. These multiply the extra negative penalty in
-#'   zeta-tau and the entire negative threshold in the other two
-#'   parameterizations.
+#'   entries are truncated to zero and at least one positive entry is
+#'   required. These multiply the extra negative penalty in zeta-tau and the
+#'   entire negative threshold in the other two parameterizations.
 #' @param exclude Optional vector of one-based predictor indices to exclude from
 #'   the penalized fit.
-#' @param pmax Maximum active-set size allocated for each grid fit; default p.
+#' @param pmax Maximum active-set size allowed at each grid cell; default p.
+#'   Cells that would exceed it are skipped (left uncomputed) with a warning.
 #' @param standardize Whether the native solver scales its input predictors.
 #'   Returned coefficients are rescaled by the solver.
 #' @param intercept Whether to fit an intercept in the penalized stage.
 #'   Univariate preprocessing, when used, computes its own predictor-specific
 #'   intercepts.
-#' @param eps Convergence tolerance passed to the native coordinate solver;
-#'   default 1e-8.
-#' @param maxit Coordinate-pass limit across the grid; default 1e5.
+#' @param eps Convergence threshold for the native coordinate solver; default
+#'   1e-8. Coordinate descent at a grid cell stops when the largest squared
+#'   change of a coefficient in a full pass (on the solver's internal,
+#'   standardized when \code{standardize = TRUE}, predictor scale) is below
+#'   \code{eps} times the null deviance per observation. For
+#'   \code{"gaussian"} that is the variance of \code{y} (the mean of
+#'   \code{y^2} when \code{intercept = FALSE}), so fits are invariant to
+#'   rescaling \code{y}; for \code{"binomial"} it is
+#'   \eqn{-2[p \log p + (1 - p) \log(1 - p)]}{-2[p log p + (1 - p) log(1 - p)]}
+#'   with \eqn{p} the proportion of the second class (\eqn{2 \log 2}{2 log 2}
+#'   when \code{intercept = FALSE}).
+#' @param maxit Coordinate-pass limit per second-coordinate value; default
+#'   1e5. The solver stops when the total number of passes over the whole grid
+#'   exceeds \code{maxit} times the length of the second grid (capped at the
+#'   largest integer), leaving the remaining cells uncomputed with a warning.
 #'
 #' @return A list of classes \code{suni2D} and \code{sunipath} with components:
 #'   \describe{
@@ -133,9 +173,11 @@
 #'       matrix of reconstructed coefficients
 #'       on the original-predictor scale.}
 #'     \item{gamma0}{A first-grid-length by second-grid-length matrix of
-#'       reconstructed intercepts.}
+#'       reconstructed intercepts; NA marks grid cells that were not
+#'       computed.}
 #'     \item{df}{A first-grid-length by second-grid-length matrix giving the
-#'       number of nonzero coefficients at each grid point.}
+#'       number of nonzero coefficients at each grid point (0 for uncomputed
+#'       cells).}
 #'     \item{dim}{Dimensions of the coefficient grid.}
 #'     \item{zeta, tau}{Penalty-coordinate vectors for a \code{"zeta_tau"}
 #'       fit.}
@@ -145,6 +187,8 @@
 #'       fit.}
 #'     \item{method}{The penalty parameterization used for the fit.}
 #'     \item{family}{The response family requested for the fit.}
+#'     \item{classnames}{For \code{family = "binomial"} only, the two class
+#'       labels of \code{y}; the second is coded +1.}
 #'     \item{npass}{Total number of coordinate passes made by the solver.}
 #'     \item{jerr}{Integer error code returned by the solver.}
 #'     \item{call}{The matched function call.}
@@ -164,7 +208,7 @@
 #' y <- rnorm(nobs)
 #' fit <- suni2D(x, y)
 #' @export
-#' @useDynLib sulnet, .registration = TRUE
+#' @useDynLib sulnet, .registration = TRUE, .fixes = "C_"
 suni2D <- function(
   x, y, beta = NULL,
   method = c("zeta_tau", "lambda_alpha", "sum_rate"),
@@ -201,6 +245,7 @@ suni2D <- function(
     if (nlevels(y) != 2L) {
       stop("y should have exactly two classes when family = \"binomial\"")
     }
+    classnames <- levels(y)
     y <- c(-1, 1)[as.integer(y)]
   }
   ## parameter setup
@@ -254,9 +299,9 @@ suni2D <- function(
       if (length(beta) != nvars) {
         stop("The size of beta must be same as the number of input variables")
       }
-      beta_ju <- as.integer(which(!is.na(beta)))
-      beta[-beta_ju] <- 0
       beta <- as.double(beta)
+      beta[is.na(beta)] <- 0
+      beta_ju <- as.integer(beta != 0)
     } else {
       stop("beta must be either a list or a vector")
     }
@@ -281,7 +326,7 @@ suni2D <- function(
       }
       if (nzeta < 3) {
         message("nzeta should be at least 3, set to 3")
-        nzeta <- 3
+        nzeta <- 3L
       }
       flminz <- as.double(lambda.factor)
       uzeta <- double(nzeta)
@@ -303,7 +348,7 @@ suni2D <- function(
       }
       if (ntau < 3) {
         message("ntau should be at least 3, set to 3")
-        ntau <- 3
+        ntau <- 3L
       }
       flmint <- as.double(lambda.factor)
       utau <- double(ntau)
@@ -329,7 +374,7 @@ suni2D <- function(
       }
       if (nsum < 3) {
         message("nsum should be at least 3, set to 3")
-        nsum <- 3
+        nsum <- 3L
       }
       flmins <- as.double(lambda.factor)
       usum <- double(nsum)
@@ -366,6 +411,7 @@ suni2D <- function(
           ualpha <- as.double(sort(unique(ualpha)))
           alpha <- ualpha
           lambda <- sum
+          nlambda <- nsum
         }
       }
       urate <- as.double(sort(unique(rate)))
@@ -385,7 +431,7 @@ suni2D <- function(
       }
       if (nlambda < 3) {
         message("nlambda should be at least 3, set to 3")
-        nlambda <- 3
+        nlambda <- 3L
       }
       flminl <- as.double(lambda.factor)
       ulambda <- double(nlambda)
@@ -431,6 +477,15 @@ suni2D <- function(
     jd <- as.integer(0)
   }
 
+  ## maxit is a budget per second-coordinate value; the solver checks the
+  ## total over the grid. Computed in double to avoid integer overflow.
+  n2 <- switch(method,
+    zeta_tau = ntau,
+    lambda_alpha = nalpha,
+    sum_rate = nrate
+  )
+  maxit <- as.integer(min(as.double(maxit) * n2, .Machine$integer.max))
+
   fit <- switch(family,
     gaussian = switch(method,
       zeta_tau = suniZTpath(
@@ -471,6 +526,9 @@ suni2D <- function(
 
   fit$call <- this.call
   fit$family <- family
+  if (family == "binomial") {
+    fit$classnames <- classnames
+  }
   ################################################################################
   class(fit) <- c("suni2D", class(fit))
   fit

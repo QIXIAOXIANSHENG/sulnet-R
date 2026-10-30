@@ -19,17 +19,19 @@ utau = double(ntau)
 flminz <- 0.01
 flmint <- 0.01
 family = "gaussian"
+isd <- 1L
+intr <- 1L
 
 # 1
 alpha = NULL
-lams = getztR(nobs, nvars, nzeta, ntau, x, y, uzeta, utau, pf, flminz, flmint, family, alpha)
+lams = getztR(nobs, nvars, nzeta, ntau, x, y, uzeta, utau, pf, flminz, flmint, isd, intr, family = family)
 grid1 = as.matrix(expand.grid(lams$uzeta, lams$utau))
 zeta1 = log(grid1[, 1])
 tau1 = log(grid1[, 2] + grid1[, 1])
 
 # 2
 alpha = NULL
-lams = getztR(nobs, nvars, nzeta, ntau, x, y, uzeta, utau, pf, flminz, flmint, family, alpha)
+lams = getztR(nobs, nvars, nzeta, ntau, x, y, uzeta, utau, pf, flminz, flmint, isd, intr, family = family)
 grid2 <- as.matrix(expand.grid(lams$uzeta, lams$utau))
 zeta2 <- log(grid2[, 1])
 tau2 = log(grid2[, 2] * grid2[, 1] / max(grid2[, 1]) + grid2[, 1])

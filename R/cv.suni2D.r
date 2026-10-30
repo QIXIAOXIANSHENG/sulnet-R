@@ -9,11 +9,20 @@
 #'   region at least as strongly penalized in both coordinates, favoring the
 #'   larger second coordinate first.
 #'
+#'   A grid cell that the full-data fit or any fold did not compute (for
+#'   example beyond \code{pmax} or the pass limit) has NA in \code{cvm} and
+#'   \code{cvsd} and is never selected. The selected pairs are values of the
+#'   full-data grid.
+#'
 #' @param x Predictor matrix with observations in rows and predictors in
 #'   columns; coerced to a dense matrix by the fitting function.
 #' @param y Response with one observation per row of \code{x}.
-#' @param pred.loss Loss selector. The current grid scorer uses squared error;
-#'   \code{"misclass"} produces a warning and falls back to \code{"loss"}.
+#' @param pred.loss Loss selector. For \code{family = "gaussian"} the loss is
+#'   squared error, and \code{"misclass"} produces a warning and falls back to
+#'   \code{"loss"}. For \code{family = "binomial"}, \code{"loss"} (the default)
+#'   is the deviance \eqn{2\log(1 + e^{-yf})} with the link \eqn{f} clipped to
+#'   \eqn{|f| \le \log(10^5 - 1)}, and \code{"misclass"} is the
+#'   misclassification rate.
 #' @param nfolds Number of folds when \code{foldid} is omitted; default 5.
 #' @param foldid Optional length-n vector of fold labels in 1 through the number
 #'   of folds. Its maximum replaces \code{nfolds}. Otherwise labels are randomly
@@ -42,7 +51,10 @@
 #'       \code{sum} and \code{rate}.}
 #'     \item{cvm}{Matrix of mean held-out losses. columns correspond to the
 #'       first penalty coordinate and rows to the second.}
-#'     \item{cvsd}{Matrix of estimated standard errors for \code{cvm}.}
+#'     \item{cvsd}{Matrix of estimated standard errors for \code{cvm}, computed
+#'       per observation as \eqn{\sqrt{\operatorname{mean}_i (L_i -
+#'       \mathrm{cvm})^2 / (N - 1)}}. This is generally smaller than a per-fold
+#'       standard error such as the default of \code{cv.glmnet}.}
 #'     \item{cvupper}{Matrix equal to \code{cvm + cvsd}.}
 #'     \item{cvlower}{Matrix equal to \code{cvm - cvsd}.}
 #'     \item{name}{Name of the cross-validation loss.}
@@ -88,6 +100,9 @@ cv.suni2D <- function(
   )
   method <- suni2D.object$method
   pen <- getpenalty(suni2D.object)
+  ## The folds get the snapped grid below; selections are reported on the
+  ## full-data grid so that coef/predict hit computed cells exactly.
+  pen.fit <- pen
   tol <- sqrt(.Machine$double.eps)
   if (method == "lambda_alpha") {
     if (abs(pen[[2]][1] - 0.5) <= tol) {
@@ -123,9 +138,19 @@ cv.suni2D <- function(
   cvm <- cvstuff$cvm
   cvsd <- cvstuff$cvsd
   cvname <- cvstuff$name
-  lamin <- getmin2D(pen$pen1, pen$pen2, cvm, cvsd, method)
+  ## Cells the full-data fit did not compute cannot be selected either.
+  uncomputed <- t(is.na(suni2D.object$gamma0))
+  cvm[uncomputed] <- NA
+  cvsd[uncomputed] <- NA
+  if (all(is.na(cvm))) {
+    stop("no penalty combination was computed by the full-data fit and ",
+      "every fold",
+      call. = FALSE
+    )
+  }
+  lamin <- getmin2D(pen.fit$pen1, pen.fit$pen2, cvm, cvsd, method)
   out <- c(
-    setNames(pen, strsplit(method, "_")[[1]]),
+    setNames(pen.fit, strsplit(method, "_")[[1]]),
     list(
       cvm = cvm, cvsd = cvsd, cvupper = cvm + cvsd,
       cvlower = cvm - cvsd, name = cvname,

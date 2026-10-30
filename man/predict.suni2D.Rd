@@ -4,7 +4,14 @@
 \alias{predict.suni2D}
 \title{Predict on a two-dimensional penalty grid}
 \usage{
-\method{predict}{suni2D}(object, newx, penalty1 = NULL, penalty2 = NULL, type = c("link"), ...)
+\method{predict}{suni2D}(
+  object,
+  newx,
+  penalty1 = NULL,
+  penalty2 = NULL,
+  type = c("link", "class"),
+  ...
+)
 }
 \arguments{
 \item{object}{Object inheriting from \code{suni2D}.}
@@ -18,15 +25,18 @@ according to \code{object$method}. \code{NULL} uses the fitted grid.}
 \item{penalty2}{Values of the second grid coordinate: tau, alpha, or rate
 according to \code{object$method}. \code{NULL} uses the fitted grid.}
 
-\item{type}{Type forwarded to the next method. Currently only \code{links}
-is supported.}
+\item{type}{\code{"link"} (default) returns the linear predictor;
+\code{"class"}, for binomial fits only, returns the predicted class
+labels (the second level of the training response when the link is
+positive).}
 
 \item{...}{Additional arguments, currently unused by the path method.}
 }
 \value{
-A named list of numeric matrices, one per selected second-coordinate
-  value, with new observations in rows and first-coordinate values in
-  columns.
+A named list of matrices, one per selected second-coordinate value,
+  with new observations in rows and first-coordinate values in columns.
+  They are numeric for \code{type = "link"} and hold the training class
+  labels for \code{type = "class"}.
 }
 \description{
 Delegate prediction to the underlying grid path method.

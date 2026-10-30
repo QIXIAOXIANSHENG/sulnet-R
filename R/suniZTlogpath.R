@@ -20,14 +20,16 @@ suniZTlogpath <- function(
   betaFIT <- .Fortran("betalogFIT", as.integer(nobs),
     as.integer(nvars), x, y,
     beta0 = double(nvars), beta = beta, beta_ju, medpj,
-    fit = double(nobs * nvars), PACKAGE = "sulnet"
+    fit = double(nobs * nvars), jerr = integer(nvars),
+    PACKAGE = "sulnet"
   )
+  betalogcheck(betaFIT$jerr, vnames)
 
   f <- matrix(betaFIT$fit, nobs, nvars)
   storage.mode(f) <- "double"
 
   lam <- getztR(nobs, nvars, nzeta, ntau, f,
-    y, uzeta, utau, pf, flminz, flmint, intr,
+    y, uzeta, utau, gridpf(pf, jd), flminz, flmint, isd, intr,
     family = "binomial"
   )
   uzeta <- as.double(lam$uzeta)

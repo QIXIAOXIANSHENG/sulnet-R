@@ -171,15 +171,15 @@ SUBROUTINE getlambdabinom(nobs, nvars, nlam, ulam, x, y, vp, flmin)
 END SUBROUTINE getlambdabinom
 
 
-SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint, intr, diffz, difft)
+SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint, isd, intr, diffz, difft)
     IMPLICIT NONE
-    DOUBLE PRECISION, PARAMETER :: big = 9.9E30
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nzeta
     INTEGER :: ntau
+    INTEGER :: isd
     INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -198,10 +198,8 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
     INTEGER :: ju(nvars)
     DOUBLE PRECISION :: zf
     DOUBLE PRECISION :: tf
-    DOUBLE PRECISION :: z = 0.0D0
-    DOUBLE PRECISION :: t = 0.0D0
-    DOUBLE PRECISION :: ztemp(nzeta)
-    DOUBLE PRECISION :: ttemp(ntau)
+    DOUBLE PRECISION :: z
+    DOUBLE PRECISION :: t
     DOUBLE PRECISION :: u
     DOUBLE PRECISION :: pos
     DOUBLE PRECISION :: neg
@@ -213,13 +211,15 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
     maj = 2.0D0*maj
     IF (flminz < 1.0D0) THEN
         flminz = MAX(mfl, flminz)
-        zf = flminz**(1.0D0/(DBLE(nzeta) - 1.0D0))
+        zf = 1.0D0
+        IF (nzeta > 1) zf = flminz**(1.0D0/(DBLE(nzeta) - 1.0D0))
     ELSE
         diffz = -1.0D0
     END IF
     IF (flmint < 1.0D0) THEN
         flmint = MAX(mfl, flmint)
-        tf = flmint**(1.0D0/(DBLE(ntau) - 1.0D0))
+        tf = 1.0D0
+        IF (ntau > 1) tf = flmint**(1.0D0/(DBLE(ntau) - 1.0D0))
     ELSE
         difft = -1.0D0
     END IF
@@ -229,13 +229,13 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
     ! isd = 0
     ! intr = 1
     ! CALL DBLEPR("x0", -1, x(1,:), 14)
-    CALL standard(nobs, nvars, x, ju, 0, intr, xmean, xnorm, maj)
+    CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
     ! CALL DBLEPR("x", -1, x(1,:), 14)
     ! CALL DBLEPR("y", -1, y(1:14), 14)
     ! CALL DBLEPR("xmean", -1, xmean, 14)
     IF (flminz < 1.0D0 .OR. flmint < 1.0D0) THEN
-        ztemp = 0.0D0
-        ttemp = 0.0D0
+        z = 0.0D0
+        t = 0.0D0
         DO j = 1, nvars
             IF (ju(j) /= 0) THEN
                 IF (vp(j) > 0.0D0) THEN
@@ -254,56 +254,43 @@ SUBROUTINE getzt(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint
         ! t = t*tf/nobs
     END IF
 
-    IF (flminz >= 1.0D0) THEN
-    ELSE
+    ! Geometric grids starting at the smallest all-zero zeta. The first zeta
+    ! is raised by a relative 1e-9 so that rounding in the solver cannot leave
+    ! a tiny nonzero coefficient in the first row. Grids of any length >= 1.
+    IF (flminz < 1.0D0) THEN
+        pos = MAX(z, t)/DBLE(nobs)
         DO l = 1, nzeta
-            IF(l>2) THEN
-                pos = pos*zf
-                ztemp(l) = pos
-            ELSE IF (l == 1) THEN
-                ztemp(l) = big
-            ELSE IF (l == 2) THEN
-                pos = MAX(z, t)
-                pos = pos*zf/nobs
-                ztemp(l) = pos
-            END IF
+            uzeta(l) = pos*zf**(l - 1)
         END DO
-        uzeta = ztemp
-        ztemp = LOG(ztemp)
-        diffz = ztemp(2) - ztemp(3)
-        uzeta(1) = EXP(2*ztemp(2) - ztemp(3))
+        uzeta(1) = uzeta(1)*(1.0D0 + 1.0D-9)
+        diffz = -LOG(zf)
     END IF
 
-    IF (flmint >= 1.0D0) THEN
-    ELSE
+    ! The tau grid starts at |z - t|, or at the zeta scale when the largest
+    ! positive and negative scores (nearly) coincide.
+    IF (flmint < 1.0D0) THEN
+        neg = ABS(z - t)
+        IF (neg <= 1.0D-8*MAX(z, t)) neg = MAX(z, t)
+        neg = neg/DBLE(nobs)
         DO l = 1, ntau
-            IF(l>2) THEN
-                neg = neg*tf
-                ttemp(l) = neg
-            ELSE IF (l == 1) THEN
-                ttemp(l) = big
-            ELSE IF (l == 2) THEN
-                neg = ABS(z-t)
-                neg = neg*tf/nobs
-                ttemp(l) = neg
-            END IF
+            utau(l) = neg*tf**(l - 1)
         END DO
-        utau = ttemp
-        ttemp = LOG(ttemp)
-        difft = ttemp(2) - ttemp(3)
-        utau(1) = EXP(2*ttemp(2) - ttemp(3))
+        difft = -LOG(tf)
     END IF
     DEALLOCATE (maj)
 END SUBROUTINE getzt
 
 SUBROUTINE getla(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
-    & x, y, vp, flmin, flmina, intr)
+    & x, y, vp, flmin, flmina, isd, intr)
+    IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
+    INTEGER :: i
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nlambda
     INTEGER :: nalpha
+    INTEGER :: isd
     INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -328,7 +315,7 @@ SUBROUTINE getla(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
     difft = 0.0D0
 
     CALL getzt(nobs, nvars, nlambda, nalpha, ulambda, ualpha &
-    &, x, y, vp, flmin, flmina, intr, diffz, difft)
+    &, x, y, vp, flmin, flmina, isd, intr, diffz, difft)
 
     
     IF(flmina < 1.0D0) THEN
@@ -345,6 +332,8 @@ SUBROUTINE getla(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
             DO i = 1, nalpha
                 ualpha(i) = mina + (maxa - mina) * DBLE(i - 1) / DBLE(nalpha - 1)
             END DO
+            ! exact endpoint, so the grid can be passed back in (alpha >= 0.5)
+            ualpha(nalpha) = maxa
         END IF
     END IF
     IF(flmin < 1.0D0) THEN
@@ -356,13 +345,16 @@ END SUBROUTINE getla
 
 
 SUBROUTINE getsr(nobs, nvars, nsum, nrate, usum, urate,&
-    & x, y, vp, flmins, flminr, intr)
+    & x, y, vp, flmins, flminr, isd, intr)
+    IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
+    INTEGER :: i
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nsum
     INTEGER :: nrate
+    INTEGER :: isd
     INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -388,7 +380,7 @@ SUBROUTINE getsr(nobs, nvars, nsum, nrate, usum, urate,&
     difft = 0.0D0
 
     CALL getzt(nobs, nvars, nsum, nrate, usum, urate &
-    &, x, y, vp, flmins, flminr, intr, diffz, difft)
+    &, x, y, vp, flmins, flminr, isd, intr, diffz, difft)
 
     
     IF(flminr < 1.0D0) THEN
@@ -408,9 +400,11 @@ SUBROUTINE getsr(nobs, nvars, nsum, nrate, usum, urate,&
             DO i = 1, nrate
                 urate(i) = minr * EXP(DBLE(i-1) * step)
             END DO
+            ! exact endpoint, so the grid can be passed back in (rate >= 1)
+            urate(nrate) = maxr
         END IF
     END IF
-    IF(flmin < 1.0D0) THEN
+    IF(flmins < 1.0D0) THEN
         usum = usum * 2.0D0
     END IF
     
@@ -418,15 +412,15 @@ SUBROUTINE getsr(nobs, nvars, nsum, nrate, usum, urate,&
 END SUBROUTINE getsr
 
 
-SUBROUTINE getztlog(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint, intr, diffz, difft)
+SUBROUTINE getztlog(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flmint, isd, intr, diffz, difft)
     IMPLICIT NONE
-    DOUBLE PRECISION, PARAMETER :: big = 9.9E30
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nzeta
     INTEGER :: ntau
+    INTEGER :: isd
     INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -445,10 +439,8 @@ SUBROUTINE getztlog(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flm
     INTEGER :: ju(nvars)
     DOUBLE PRECISION :: zf
     DOUBLE PRECISION :: tf
-    DOUBLE PRECISION :: z = 0.0D0
-    DOUBLE PRECISION :: t = 0.0D0
-    DOUBLE PRECISION :: ztemp(nzeta)
-    DOUBLE PRECISION :: ttemp(ntau)
+    DOUBLE PRECISION :: z
+    DOUBLE PRECISION :: t
     DOUBLE PRECISION :: u
     DOUBLE PRECISION :: pos
     DOUBLE PRECISION :: neg
@@ -460,13 +452,15 @@ SUBROUTINE getztlog(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flm
     maj = 0.25D0*maj
     IF (flminz < 1.0D0) THEN
         flminz = MAX(mfl, flminz)
-        zf = flminz**(1.0D0/(DBLE(nzeta) - 1.0D0))
+        zf = 1.0D0
+        IF (nzeta > 1) zf = flminz**(1.0D0/(DBLE(nzeta) - 1.0D0))
     ELSE
         diffz = -1.0D0
     END IF
     IF (flmint < 1.0D0) THEN
         flmint = MAX(mfl, flmint)
-        tf = flmint**(1.0D0/(DBLE(ntau) - 1.0D0))
+        tf = 1.0D0
+        IF (ntau > 1) tf = flmint**(1.0D0/(DBLE(ntau) - 1.0D0))
     ELSE
         difft = -1.0D0
     END IF
@@ -476,13 +470,13 @@ SUBROUTINE getztlog(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flm
     ! isd = 0
     ! intr = 1
     ! CALL DBLEPR("x0", -1, x(1,:), 14)
-    CALL standard(nobs, nvars, x, ju, 0, intr, xmean, xnorm, maj)
+    CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
     ! CALL DBLEPR("x", -1, x(1,:), 14)
     ! CALL DBLEPR("y", -1, y(1:14), 14)
     ! CALL DBLEPR("xmean", -1, xmean, 14)
     IF (flminz < 1.0D0 .OR. flmint < 1.0D0) THEN
-        ztemp = 0.0D0
-        ttemp = 0.0D0
+        z = 0.0D0
+        t = 0.0D0
         DO j = 1, nvars
             IF (ju(j) /= 0) THEN
                 IF (vp(j) > 0.0D0) THEN
@@ -501,58 +495,39 @@ SUBROUTINE getztlog(nobs, nvars, nzeta, ntau, uzeta, utau, x, y, vp, flminz, flm
         ! t = t*tf/nobs
     END IF
 
+    ! Same grids as getzt: see the comments there.
     IF (flminz < 1.0D0) THEN
+        pos = MAX(z, t)/DBLE(nobs)
         DO l = 1, nzeta
-            IF(l>2) THEN
-                pos = pos*zf
-                ztemp(l) = pos
-            ELSE IF (l == 1) THEN
-                ztemp(l) = big
-            ELSE IF (l == 2) THEN
-                pos = MAX(z, t)
-                pos = pos*zf/DBLE(nobs)
-                ztemp(l) = pos
-            END IF
+            uzeta(l) = pos*zf**(l - 1)
         END DO
-        uzeta = ztemp
-        ztemp = LOG(ztemp)
-        diffz = ztemp(2) - ztemp(3)
-        uzeta(1) = EXP(2*ztemp(2) - ztemp(3))
+        uzeta(1) = uzeta(1)*(1.0D0 + 1.0D-9)
+        diffz = -LOG(zf)
     END IF
 
     IF (flmint < 1.0D0) THEN
+        neg = ABS(z - t)
+        IF (neg <= 1.0D-8*MAX(z, t)) neg = MAX(z, t)
+        neg = neg/DBLE(nobs)
         DO l = 1, ntau
-            IF(l>2) THEN
-                neg = neg*tf
-                ttemp(l) = neg
-            ELSE IF (l == 1) THEN
-                ttemp(l) = big
-            ELSE IF (l == 2) THEN
-                neg = ABS(z-t)
-                IF (ABS(neg - 0.0D0) < 1.0D-8) THEN
-                    neg = MAX(z, t)
-                ELSE
-                    neg = neg*tf/DBLE(nobs)
-                END IF
-                ttemp(l) = neg
-            END IF
+            utau(l) = neg*tf**(l - 1)
         END DO
-        utau = ttemp
-        ttemp = LOG(ttemp)
-        difft = ttemp(2) - ttemp(3)
-        utau(1) = EXP(2*ttemp(2) - ttemp(3))
+        difft = -LOG(tf)
     END IF
     DEALLOCATE (maj)
 END SUBROUTINE getztlog
 
 SUBROUTINE getlalog(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
-    & x, y, vp, flmin, flmina, intr)
+    & x, y, vp, flmin, flmina, isd, intr)
+    IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
+    INTEGER :: i
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nlambda
     INTEGER :: nalpha
+    INTEGER :: isd
     INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -577,7 +552,7 @@ SUBROUTINE getlalog(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
     difft = 0.0D0
 
     CALL getztlog(nobs, nvars, nlambda, nalpha, ulambda, ualpha &
-    &, x, y, vp, flmin, flmina, intr, diffz, difft)
+    &, x, y, vp, flmin, flmina, isd, intr, diffz, difft)
 
     
     IF(flmina < 1.0D0) THEN
@@ -594,6 +569,8 @@ SUBROUTINE getlalog(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
             DO i = 1, nalpha
                 ualpha(i) = mina + (maxa - mina) * DBLE(i - 1) / DBLE(nalpha - 1)
             END DO
+            ! exact endpoint, so the grid can be passed back in (alpha >= 0.5)
+            ualpha(nalpha) = maxa
         END IF
     END IF
     IF(flmin < 1.0D0) THEN
@@ -604,13 +581,16 @@ SUBROUTINE getlalog(nobs, nvars, nlambda, nalpha, ulambda, ualpha,&
 END SUBROUTINE getlalog
 
 SUBROUTINE getsrlog(nobs, nvars, nsum, nrate, usum, urate,&
-    & x, y, vp, flmins, flminr, intr)
+    & x, y, vp, flmins, flminr, isd, intr)
+    IMPLICIT NONE
     DOUBLE PRECISION, PARAMETER :: mfl = 1.0E-6
 
+    INTEGER :: i
     INTEGER :: nobs
     INTEGER :: nvars
     INTEGER :: nsum
     INTEGER :: nrate
+    INTEGER :: isd
     INTEGER :: intr
 
     DOUBLE PRECISION :: x(nobs, nvars)
@@ -636,7 +616,7 @@ SUBROUTINE getsrlog(nobs, nvars, nsum, nrate, usum, urate,&
     difft = 0.0D0
 
     CALL getztlog(nobs, nvars, nsum, nrate, usum, urate &
-    &, x, y, vp, flmins, flminr, intr, diffz, difft)
+    &, x, y, vp, flmins, flminr, isd, intr, diffz, difft)
 
     
     IF(flminr < 1.0D0) THEN
@@ -656,9 +636,11 @@ SUBROUTINE getsrlog(nobs, nvars, nsum, nrate, usum, urate,&
             DO i = 1, nrate
                 urate(i) = minr * EXP(DBLE(i-1) * step)
             END DO
+            ! exact endpoint, so the grid can be passed back in (rate >= 1)
+            urate(nrate) = maxr
         END IF
     END IF
-    IF(flmin < 1.0D0) THEN
+    IF(flmins < 1.0D0) THEN
         usum = usum * 2.0D0
     END IF
     

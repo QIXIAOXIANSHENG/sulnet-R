@@ -15,7 +15,7 @@ suniSRpath <- function(x, y, nsum, nrate, flmins, flminr, usum, urate, isd, intr
 
   lam <- getsrR(
     nobs, nvars, nsum, nrate, f, y, usum,
-    urate, pf, flmins, flminr, intr,
+    urate, gridpf(pf, jd), flmins, flminr, isd, intr,
     family = "gaussian"
   )
   usum <- as.double(lam$usum)

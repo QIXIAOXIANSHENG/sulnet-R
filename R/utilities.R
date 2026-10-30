@@ -112,6 +112,55 @@ err <- function(n, maxit, pmax) {
   list(n = n, msg = msg)
 }
 
+## Stop on fatal native errors and warn on incomplete two-dimensional grids.
+## Cells exceeding pmax are skipped and the traversal continues; running out
+## of passes ends the traversal. jerr reports the first such grid cell in
+## traversal order.
+grid_err <- function(jerr, maxit, pmax) {
+  errmsg <- err(jerr, maxit, pmax)
+  if (errmsg$n == 1L) {
+    stop(errmsg$msg, call. = FALSE)
+  }
+  if (jerr < -10000L) {
+    warning("from sulnet fortran code - Number of nonzero coefficients ",
+      "exceeds pmax=", pmax, " from penalty combination ", -jerr - 10000L,
+      " of the traversal on; combinations exceeding pmax are not computed",
+      call. = FALSE
+    )
+  } else if (jerr < 0L) {
+    warning("from sulnet fortran code - Convergence for penalty ",
+      "combination ", -jerr, " of the traversal not reached within the ",
+      "total pass limit ", maxit, "; it and later combinations are not ",
+      "computed",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
+## Act on the per-predictor codes from the univariate logistic fits in
+## betalogFIT (see unilogFIT for their meaning).
+betalogcheck <- function(jerr, vnames) {
+  if (any(jerr == 8002L)) {
+    stop("y has a single class; the univariate logistic fits do not exist",
+      call. = FALSE
+    )
+  }
+  if (any(jerr == 8001L)) {
+    stop("y must be coded -1 or 1 for the univariate logistic fits",
+      call. = FALSE
+    )
+  }
+  if (any(jerr == -1L)) {
+    warning("univariate logistic fit did not converge for ",
+      paste(vnames[jerr == -1L], collapse = ", "),
+      " (possibly separation); the last iterate is used",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
 
 error.bars <- function(x, upper, lower, width = 0.02,
                        ...) {
@@ -192,7 +241,9 @@ getmin2D <- function(pen1, pen2, cvm, cvsd, method) {
 #'
 #' @details Native arrays are column-major: active coefficients vary fastest,
 #'   then zeta, then tau. Predictor indices in itheta are one-based. Only the
-#'   first napenalty rows of apenalty identify computed grid cells; traversal
+#'   first napenalty rows of apenalty identify computed grid cells, except
+#'   cells with a negative ntheta, which the solver skipped for exceeding pmax
+#'   (they are also dropped from penalty.path); traversal
 #'   order need not match the rectangular storage order. Invalid counts, indices
 #'   or grid matches stop. Positive native errors stop and negative errors warn
 #'   before partial output is returned. Uncomputed cells have NA intercepts,
@@ -229,27 +280,7 @@ getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
   ## ------------------------------------------------------------
   ## Check Fortran error
   ## ------------------------------------------------------------
-  errmsg <- err(fit$jerr, maxit, pmax)
-
-  if (errmsg$n == 1L) {
-    stop(errmsg$msg, call. = FALSE)
-  }
-
-  if (errmsg$n == -1L) {
-    msg <- gsub(
-      "lambda value",
-      "penalty combination",
-      errmsg$msg,
-      fixed = TRUE
-    )
-    msg <- gsub(
-      "larger lambdas",
-      "earlier penalty combinations",
-      msg,
-      fixed = TRUE
-    )
-    warning(msg, call. = FALSE)
-  }
+  grid_err(fit$jerr, maxit, pmax)
 
   ## ------------------------------------------------------------
   ## Names
@@ -327,9 +358,7 @@ getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
     dimnames = list(zetanames, taunames)
   )
 
-  if (napenalty == npenalty) {
-    computed[, ] <- TRUE
-  } else if (napenalty > 0L) {
+  if (napenalty > 0L) {
     iz.path <- match(penalty.path[, 1L], zeta)
     it.path <- match(penalty.path[, 2L], tau)
 
@@ -340,7 +369,12 @@ getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
       )
     }
 
-    computed[cbind(iz.path, it.path)] <- TRUE
+    ## Cells skipped for exceeding pmax carry a negative ntheta; they stay
+    ## uncomputed and are dropped from the reported path.
+    cells <- cbind(iz.path, it.path)
+    done <- ntheta[cells] >= 0L
+    computed[cells[done, , drop = FALSE]] <- TRUE
+    penalty.path <- penalty.path[done, , drop = FALSE]
   }
 
   ## Uncomputed intercepts should not look like valid zero models.
@@ -528,7 +562,9 @@ getoutput <- function(fit, maxit, pmax, nvars, vnames) {
 #'
 #' @details Native arrays are column-major: active coefficients vary fastest,
 #'   then lambda, then alpha. Predictor indices in itheta are one-based. Only
-#'   the first napenalty rows of apenalty identify computed grid cells;
+#'   the first napenalty rows of apenalty identify computed grid cells, except
+#'   cells with a negative ntheta, which the solver skipped for exceeding pmax
+#'   (they are also dropped from penalty.path);
 #'   traversal order need not match the rectangular storage order. Invalid
 #'   counts, indices or grid matches stop. Positive native errors stop and
 #'   negative errors warn before partial output is returned. Uncomputed cells
@@ -568,38 +604,13 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
   ## ------------------------------------------------------------
   ## Check Fortran error
   ## ------------------------------------------------------------
-  errmsg <- err(fit$jerr, maxit, pmax)
-
-  if (errmsg$n == 1L) {
-    stop(errmsg$msg, call. = FALSE)
-  }
-
-  if (errmsg$n == -1L) {
-    msg <- gsub(
-      "lambda value",
-      "penalty combination",
-      errmsg$msg,
-      fixed = TRUE
-    )
-    msg <- gsub(
-      "larger lambdas",
-      "earlier penalty combinations",
-      msg,
-      fixed = TRUE
-    )
-    warning(msg, call. = FALSE)
-  }
+  grid_err(fit$jerr, maxit, pmax)
 
   ## ------------------------------------------------------------
   ## Names
   ## ------------------------------------------------------------
   lambdanames <- paste0("l", seq_len(nlambda) - 1L)
   alphanames <- paste0("a", seq_len(nalpha) - 1L)
-  zeta <- outer(lambda, 1 - alpha, "*")
-  tau <- outer(lambda, 2 * alpha - 1, "*")
-
-  dimnames(zeta) <- list(lambdanames, alphanames)
-  dimnames(tau) <- list(lambdanames, alphanames)
 
   ## ------------------------------------------------------------
   ## ntheta
@@ -678,9 +689,7 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
     dimnames = list(lambdanames, alphanames)
   )
 
-  if (napenalty == npenalty) {
-    computed[, ] <- TRUE
-  } else if (napenalty > 0L) {
+  if (napenalty > 0L) {
     iz.path <- match(penalty.path[, 1L], lambda)
     it.path <- match(penalty.path[, 2L], alpha)
 
@@ -691,7 +700,12 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
       )
     }
 
-    computed[cbind(iz.path, it.path)] <- TRUE
+    ## Cells skipped for exceeding pmax carry a negative ntheta; they stay
+    ## uncomputed and are dropped from the reported path.
+    cells <- cbind(iz.path, it.path)
+    done <- ntheta[cells] >= 0L
+    computed[cells[done, , drop = FALSE]] <- TRUE
+    penalty.path <- penalty.path[done, , drop = FALSE]
   }
 
   ## Uncomputed intercepts should not look like valid zero models.
@@ -837,7 +851,9 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
 #'
 #' @details Native arrays are column-major: active coefficients vary fastest,
 #'   then sum, then rate. Predictor indices in itheta are one-based. Only the
-#'   first napenalty rows of apenalty identify computed grid cells; traversal
+#'   first napenalty rows of apenalty identify computed grid cells, except
+#'   cells with a negative ntheta, which the solver skipped for exceeding pmax
+#'   (they are also dropped from penalty.path); traversal
 #'   order need not match the rectangular storage order. Invalid counts, indices
 #'   or grid matches stop. Positive native errors stop and negative errors warn
 #'   before partial output is returned. Uncomputed cells have NA intercepts,
@@ -876,38 +892,13 @@ getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
   ## ------------------------------------------------------------
   ## Check Fortran error
   ## ------------------------------------------------------------
-  errmsg <- err(fit$jerr, maxit, pmax)
-
-  if (errmsg$n == 1L) {
-    stop(errmsg$msg, call. = FALSE)
-  }
-
-  if (errmsg$n == -1L) {
-    msg <- gsub(
-      "sum value",
-      "penalty combination",
-      errmsg$msg,
-      fixed = TRUE
-    )
-    msg <- gsub(
-      "larger sums",
-      "earlier penalty combinations",
-      msg,
-      fixed = TRUE
-    )
-    warning(msg, call. = FALSE)
-  }
+  grid_err(fit$jerr, maxit, pmax)
 
   ## ------------------------------------------------------------
   ## Names
   ## ------------------------------------------------------------
   sumnames <- paste0("l", seq_len(nsum) - 1L)
   ratenames <- paste0("a", seq_len(nrate) - 1L)
-  zeta <- outer(sum, rate / (1 + rate), "*")
-  tau <- outer(sum, (rate - 1) / (1 + rate), "*")
-
-  dimnames(zeta) <- list(sumnames, ratenames)
-  dimnames(tau) <- list(sumnames, ratenames)
 
   ## ------------------------------------------------------------
   ## ntheta
@@ -986,9 +977,7 @@ getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
     dimnames = list(sumnames, ratenames)
   )
 
-  if (napenalty == npenalty) {
-    computed[, ] <- TRUE
-  } else if (napenalty > 0L) {
+  if (napenalty > 0L) {
     iz.path <- match(penalty.path[, 1L], sum)
     it.path <- match(penalty.path[, 2L], rate)
 
@@ -999,7 +988,12 @@ getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
       )
     }
 
-    computed[cbind(iz.path, it.path)] <- TRUE
+    ## Cells skipped for exceeding pmax carry a negative ntheta; they stay
+    ## uncomputed and are dropped from the reported path.
+    cells <- cbind(iz.path, it.path)
+    done <- ntheta[cells] >= 0L
+    computed[cells[done, , drop = FALSE]] <- TRUE
+    penalty.path <- penalty.path[done, , drop = FALSE]
   }
 
   ## Uncomputed intercepts should not look like valid zero models.
