@@ -114,9 +114,10 @@ err <- function(n, maxit, pmax) {
 
 ## Stop on fatal native errors and warn on incomplete two-dimensional grids.
 ## Cells exceeding pmax are skipped and the traversal continues; running out
-## of passes ends the traversal. jerr reports the first such grid cell in
-## traversal order.
-grid_err <- function(jerr, maxit, pmax) {
+## of passes ends the traversal, or, with perlevel = TRUE (binomial solvers,
+## whose maxit is a budget per second-coordinate value), only that value.
+## jerr reports the first such grid cell in traversal order.
+grid_err <- function(jerr, maxit, pmax, perlevel = FALSE) {
   errmsg <- err(jerr, maxit, pmax)
   if (errmsg$n == 1L) {
     stop(errmsg$msg, call. = FALSE)
@@ -125,6 +126,13 @@ grid_err <- function(jerr, maxit, pmax) {
     warning("from sulnet fortran code - Number of nonzero coefficients ",
       "exceeds pmax=", pmax, " from penalty combination ", -jerr - 10000L,
       " of the traversal on; combinations exceeding pmax are not computed",
+      call. = FALSE
+    )
+  } else if (jerr < 0L && perlevel) {
+    warning("from sulnet fortran code - Convergence not reached within ",
+      maxit, " passes of a second-coordinate value, first at penalty ",
+      "combination ", -jerr, " of the traversal; the remaining combinations ",
+      "of each such value are not computed",
       call. = FALSE
     )
   } else if (jerr < 0L) {
@@ -263,7 +271,7 @@ getmin2D <- function(pen1, pen2, cvm, cvsd, method) {
 #'   Theta coefficients refer to the transformed predictors, before
 #'   reconstruction.
 #' @noRd
-getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
+getoutputZT <- function(fit, maxit, pmax, nvars, vnames, perlevel = FALSE) {
   nzeta <- as.integer(fit$nzeta[1L])
   ntau <- as.integer(fit$ntau[1L])
 
@@ -280,7 +288,7 @@ getoutputZT <- function(fit, maxit, pmax, nvars, vnames) {
   ## ------------------------------------------------------------
   ## Check Fortran error
   ## ------------------------------------------------------------
-  grid_err(fit$jerr, maxit, pmax)
+  grid_err(fit$jerr, maxit, pmax, perlevel)
 
   ## ------------------------------------------------------------
   ## Names
@@ -587,7 +595,7 @@ getoutput <- function(fit, maxit, pmax, nvars, vnames) {
 #'   penalty.path. Theta coefficients refer to the transformed predictors,
 #'   before reconstruction.
 #' @noRd
-getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
+getoutputLA <- function(fit, maxit, pmax, nvars, vnames, perlevel = FALSE) {
   nlambda <- as.integer(fit$nlambda[1L])
   nalpha <- as.integer(fit$nalpha[1L])
 
@@ -604,7 +612,7 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
   ## ------------------------------------------------------------
   ## Check Fortran error
   ## ------------------------------------------------------------
-  grid_err(fit$jerr, maxit, pmax)
+  grid_err(fit$jerr, maxit, pmax, perlevel)
 
   ## ------------------------------------------------------------
   ## Names
@@ -875,7 +883,7 @@ getoutputLA <- function(fit, maxit, pmax, nvars, vnames) {
 #'   Theta coefficients refer to the transformed predictors, before
 #'   reconstruction.
 #' @noRd
-getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
+getoutputSR <- function(fit, maxit, pmax, nvars, vnames, perlevel = FALSE) {
   nsum <- as.integer(fit$nsum[1L])
   nrate <- as.integer(fit$nrate[1L])
 
@@ -892,7 +900,7 @@ getoutputSR <- function(fit, maxit, pmax, nvars, vnames) {
   ## ------------------------------------------------------------
   ## Check Fortran error
   ## ------------------------------------------------------------
-  grid_err(fit$jerr, maxit, pmax)
+  grid_err(fit$jerr, maxit, pmax, perlevel)
 
   ## ------------------------------------------------------------
   ## Names

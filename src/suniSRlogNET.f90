@@ -80,7 +80,7 @@ SUBROUTINE suniSRlogNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nsum,&
     pf3 = MAX(0.0D0, pf3)
     CALL standard(nobs, nvars, x, ju, isd, intr, xmean, xnorm, maj)
     CALL gridIndexSR(nsum, nrate, usum, urate, ind)
-    CALL suniSRlogNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
+    CALL suniSRlogNETpath(lam2, nobs, nvars, x, y, ju, pf, pf2, pf3, &
         & pmax, nsum, nrate, usum, urate, eps, maxit, napenalty, theta0, &
         & theta, itheta, ntheta, apenalty, npass, ind, intr, jerr)
     IF (jerr > 0) RETURN
@@ -105,10 +105,10 @@ SUBROUTINE suniSRlogNET(lam2, nobs, nvars, x, y, jd, pf, pf2, pf3, pmax, nsum,&
 END SUBROUTINE suniSRlogNET
 
 
-! Coordinate updates with separate positive and negative thresholds:
-! sum/(1+rate)*pf and sum*rate/(1+rate)*pf3. Warm starts use the predecessor
-! in ind; the quadratic coordinate denominator adds lam2*pf2.
-SUBROUTINE suniSRlogNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
+! Separate positive and negative thresholds sum/(1+rate)*pf and
+! sum*rate/(1+rate)*pf3, solved cell by cell by the shared IRLS grid solver
+! in sunilogpath.f90.
+SUBROUTINE suniSRlogNETpath(lam2, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     & pmax, nsum, nrate, usum, urate, eps, maxit, napenalty, theta0, theta, &
     & itheta, ntheta, apenalty, npass, ind, intr, jerr)
 
@@ -130,7 +130,6 @@ SUBROUTINE suniSRlogNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     INTEGER :: ind(nsum*nrate, 4)
 
     DOUBLE PRECISION :: lam2
-    DOUBLE PRECISION :: maj(nvars)
     DOUBLE PRECISION :: x(nobs, nvars)
     DOUBLE PRECISION :: y(nobs)
     DOUBLE PRECISION :: pf(nvars)
@@ -143,205 +142,27 @@ SUBROUTINE suniSRlogNETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     DOUBLE PRECISION :: theta(pmax, nsum, nrate)
     DOUBLE PRECISION :: apenalty(nsum*nrate, 2)
 
-    DOUBLE PRECISION :: d
-    DOUBLE PRECISION :: dif
-    DOUBLE PRECISION :: thr
-    DOUBLE PRECISION :: nulldev
-    DOUBLE PRECISION :: ybar
-    DOUBLE PRECISION :: oldt
-    DOUBLE PRECISION :: u
-    DOUBLE PRECISION :: zeta
-    DOUBLE PRECISION :: tau
-    DOUBLE PRECISION :: negpenalty
-    DOUBLE PRECISION :: pospenalty
-    DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: t
-    DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: oldtheta
-    DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: r
+    DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: pen
 
-    INTEGER :: k
-    INTEGER :: j
     INTEGER :: l
-    INTEGER :: vrg
-    INTEGER :: ierr
-    INTEGER :: ni
     INTEGER :: iz
     INTEGER :: it
-    INTEGER :: prevz
-    INTEGER :: prevt
-    INTEGER :: npenalty
-    INTEGER, DIMENSION(:), ALLOCATABLE :: mm
 
-    npenalty = nsum * nrate
-
-    ALLOCATE (t(0:nvars), STAT=jerr)
-    ALLOCATE (oldtheta(0:nvars), STAT = ierr)
-    jerr = jerr + ierr
-    ALLOCATE (mm(1:nvars), STAT=ierr)
-    jerr = jerr + ierr
-    ALLOCATE (r(1:nobs), STAT=ierr)
-    jerr = jerr + ierr
+    ALLOCATE (pen(1:(nsum*nrate), 1:3), STAT=jerr)
     IF (jerr /= 0) RETURN
 
-    maj = 0.25D0*maj
-
-    ! convergence threshold: eps times the null deviance per observation
-    ! (y is coded -1/+1; 2*log(2) without intercept or with a single class)
-    nulldev = 2.0D0*LOG(2.0D0)
-    IF (intr == 1) THEN
-        ybar = DBLE(COUNT(y > 0.0D0))/DBLE(nobs)
-        IF (ybar > 0.0D0 .AND. ybar < 1.0D0) THEN
-            nulldev = -2.0D0*(ybar*LOG(ybar) + (1.0D0 - ybar)*LOG(1.0D0 - ybar))
-        END IF
-    END IF
-    thr = eps*nulldev
-
-    DO l = 1, npenalty
+    DO l = 1, nsum*nrate
         iz = ind(l, 1)
         it = ind(l, 2)
-        prevz = ind(l, 3)
-        prevt = ind(l, 4)
-        zeta = usum(iz) / (1 + urate(it))
-        tau = usum(iz) * urate(it) / (1 + urate(it))
-        t = 0.0D0
-        oldtheta = 0.0D0
-        mm = 0
-        r = 0.0D0
-        ni = 0
-        ! a predecessor skipped for exceeding pmax gives no warm start
-        IF (prevz > 0 .AND. prevt > 0) THEN
-            IF (ntheta(prevz, prevt) < 0) prevz = 0
-        END IF
-        IF (prevz > 0 .AND. prevt > 0) THEN
-            ni = ntheta(prevz, prevt)
-            t(0) = theta0(1, prevz, prevt)
-            r = r + y*t(0)
-            DO j = 1, ni
-                k = itheta(j, prevz, prevt)
-                itheta(j, iz, it) = k
-                mm(k) = j
-                t(k) = theta(j, prevz, prevt)
-                r = r + y*x(:, k)*t(k)
-            END DO
-        END IF
-        ! -------- OUTER LOOP -------- !
-        DO
-            IF (intr == 1) oldtheta(0) = t(0)
-            IF (ni > 0) oldtheta(itheta(1:ni, iz, it)) = t(itheta(1:ni, iz, it))
-            ! -------- MIDDLE LOOP -------- !
-            DO
-                npass = npass + 1
-                dif = 0.0D0
-                DO k = 1, nvars
-                    IF (ju(k) /= 0) THEN
-                        oldt = t(k)
-                        u = DOT_PRODUCT(y/(1.0D0 + EXP(r)), x(:, k))
-                        u = maj(k) * t(k) + u/DBLE(nobs)
-                        pospenalty = zeta * pf(k)
-                        negpenalty = tau * pf3(k)
-                        IF (u > pospenalty) THEN
-                            t(k) = (u - pospenalty) / &
-                                & (maj(k) + pf2(k)*lam2)
-                        ELSE IF (u < -negpenalty) THEN
-                            t(k) = (u + negpenalty) / &
-                                & (maj(k) + pf2(k)*lam2)
-                        ELSE
-                            t(k) = 0.0D0
-                        END IF
-                        d = t(k) - oldt
-                        IF (ABS(d) > 0.0D0) THEN
-                            dif = MAX(dif, d**2)
-                            r = r + y*x(:, k)*d
-                            IF (mm(k) == 0) THEN
-                                ni = ni + 1
-                                IF (ni > pmax) EXIT
-                                mm(k) = ni
-                                itheta(ni, iz, it) = k
-                            END IF
-                        END IF
-                    END IF
-                END DO
-                IF (ni > pmax) EXIT
-                IF (intr == 1) THEN
-                    d = sum(y/(1.0D0 + EXP(r)))
-                    d = 4.0D0*d/nobs
-                    IF (d /= 0.0D0) THEN
-                        t(0) = t(0) + d
-                        r = r + y*d
-                        dif = MAX(dif, d**2)
-                    END IF
-                END IF
-                IF (dif < thr) EXIT
-                IF (npass > maxit) THEN
-                    jerr = -l
-                    RETURN
-                END IF
-                ! -------- INNER LOOP -------- !
-                DO
-                    npass = npass + 1
-                    dif = 0.0D0
-                    DO j = 1, ni
-                        k = itheta(j, iz, it)
-                        oldt = t(k)
-                        u = DOT_PRODUCT(y/(1.0D0 + EXP(r)), x(:, k))
-                        u = maj(k) * t(k) + u/DBLE(nobs)
-                        pospenalty = zeta * pf(k)
-                        negpenalty = tau * pf3(k)
-                        IF (u > pospenalty) THEN
-                            t(k) = (u - pospenalty)/(maj(k) + pf2(k)*lam2)
-                        ELSE IF (u < -negpenalty) THEN
-                            t(k) = (u + negpenalty)/(maj(k) + pf2(k)*lam2)
-                        ELSE
-                            t(k) = 0.0D0
-                        END IF
-                        d = t(k) - oldt
-                        IF (ABS(d) > 0.0D0) THEN
-                            dif = MAX(dif, d**2)
-                            r = r + y*x(:, k)*d
-                        END IF
-                    END DO
-                    IF (intr == 1) THEN
-                        d = SUM(y/(1.0D0 + EXP(r)))
-                        d = 4.0D0*d/nobs
-                        IF (d /= 0.0D0) THEN
-                            t(0) = t(0) + d
-                            r = r + y*d
-                            dif = MAX(dif, d**2)
-                        END IF
-                    END IF
-                    IF (dif < thr) EXIT
-                    IF (npass > maxit) THEN
-                        jerr = -l
-                        RETURN
-                    END IF
-                END DO
-            END DO
-            IF (ni > pmax) EXIT
-            !-------- FINAL CHECK -------- !
-            vrg = 1
-            IF ((t(0) - oldtheta(0))**2 >= thr) vrg = 0
-            DO j = 1, ni
-                IF ((t(itheta(j, iz, it)) - oldtheta(itheta(j, iz, it)))**2 >= thr) THEN
-                    vrg = 0
-                    EXIT
-                END IF
-            END DO
-            IF (vrg == 1) EXIT
-        END DO
-        ! -------- FINAL UPDATE & SAVE RESULTS -------- !
-        IF (ni > pmax) THEN
-            ! skip this cell and continue the grid; R reports the first skip
-            IF (jerr == 0) jerr = -10000 - l
-            ni = -1
-        END IF
-        IF (ni > 0) theta(1:ni, iz, it) = t(itheta(1:ni, iz, it))
-        ntheta(iz, it) = ni
-        theta0(1, iz, it) = t(0)
+        pen(l, 1) = usum(iz)/(1.0D0 + urate(it))
+        pen(l, 2) = usum(iz)*urate(it)/(1.0D0 + urate(it))
+        pen(l, 3) = 0.0D0
         apenalty(l, 1) = usum(iz)
         apenalty(l, 2) = urate(it)
-        napenalty = l
     END DO
-    DEALLOCATE (t, oldtheta, mm, r)
+    CALL sunilogpath(lam2, nobs, nvars, x, y, ju, pf, pf2, pf3, pmax, &
+        & nsum, nrate, pen, ind, eps, maxit, intr, napenalty, theta0, theta, &
+        & itheta, ntheta, npass, jerr)
+    DEALLOCATE (pen)
     RETURN
 END SUBROUTINE suniSRlogNETpath
-
-            

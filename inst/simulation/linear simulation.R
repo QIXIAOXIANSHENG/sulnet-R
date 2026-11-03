@@ -99,6 +99,7 @@ y <- drop(x %*% gamma) + sigma * rnorm(n)
 res_model3 <- run_simulation(x, y, gamma, sigma, xtest, B = 200)
 res_model3$table
 saveRDS(res_model3, "./inst/simulation/linear/res_model3.rds")
+res_model3 <- readRDS("./inst/simulation/linear/res_model3.rds")
 
 # model 4, uniLasso
 set.seed(4)
@@ -123,5 +124,39 @@ for (i in seq(B)) {
 res_model4 <- summarize_sim(res)
 res_model4$table
 saveRDS(res_model4, "./inst/simulation/linear/res_model4.rds")
-
+# saveRDS(res_model4, "C:/Users/20020/Desktop/res_model4.rds")
 res4 <- readRDS("./inst/simulation/linear/res_model4.rds")
+
+# model 5, uniLasso homecourt
+## homecourt unilasso
+n <- 100
+ntest <- 100
+p <- 30
+rho <- 0.8
+sparsity <- 0.2
+Sigma <- outer(1:p, 1:p, function(i, j) rho^abs(i - j))
+B <- 200
+res <- list()
+for (b in 1:B) {
+  set.seed(b)
+  X <- mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+  xtest <- mvrnorm(ntest, mu = rep(0, p), Sigma = Sigma)
+  gamma <- rep(0, p)
+  nonzero_idx <- sample(1:p, size = floor(sparsity * p))
+  gamma[nonzero_idx] <- runif(length(nonzero_idx), min = 0.5, max = 1)
+  z_prime <- rnorm(n)
+  signal_var <- var(X %*% gamma)
+  sigma_prime <- sqrt(signal_var)
+  y_prime <- X %*% gamma + sigma_prime[1, 1] * z_prime
+  gamma_uni <- uniFit(X, y_prime)$beta
+  z <- rnorm(n)
+  gamma_effective <- gamma_uni * gamma
+  signal_var2 <- var(X %*% gamma_effective)
+  sigma <- sqrt(signal_var2)
+  y <- X %*% gamma_effective + sigma[1, 1] * z
+  r <- run_simulation(X, y, gamma_effective, sigma[1, 1], xtest, B = 1)
+  res[[b]] <- r$raw[1, , ]
+}
+res_model5 <- summarize_sim(res)
+res_model5$table
+saveRDS(res_model5, "./inst/simulation/linear/res_model5.rds")

@@ -1,13 +1,13 @@
 [
     {
         "file": "D:/Grad study/paper/ME/transfer learning/unilasso/sulnet/src/init.c",
-        "file_last_write": 1792908102.0,
+        "file_last_write": 1793301544.0,
         "definitions": [
             {
-                "usr": "c:@F@R_init_gcdnet",
+                "usr": "c:@F@R_init_sulnet",
                 "kind": 6,
                 "parent_name": "",
-                "name": "R_init_gcdnet(DllInfo *)",
+                "name": "R_init_sulnet(DllInfo *)",
                 "file": "D:/Grad study/paper/ME/transfer learning/unilasso/sulnet/src/init.c",
                 "line": 79,
                 "column": 6,

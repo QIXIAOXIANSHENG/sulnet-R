@@ -46,7 +46,7 @@ suniSRlogpath <- function(
     apenalty = double(nsum * nrate * 2), npass = integer(1), jerr = integer(1),
     PACKAGE = "sulnet"
   )
-  output <- getoutputSR(fit, maxit, pmax, nvars, vnames)
+  output <- getoutputSR(fit, maxit, pmax, nvars, vnames, perlevel = TRUE)
   tol <- sqrt(.Machine$double.eps)
   which <- abs(output$penalty.path[, 4] - 0) < tol
   output$penalty.path[which, 4] <- 0

@@ -139,12 +139,22 @@ standardized when \code{standardize = TRUE}, predictor scale) is below
 rescaling \code{y}; for \code{"binomial"} it is
 \eqn{-2[p \log p + (1 - p) \log(1 - p)]}{-2[p log p + (1 - p) log(1 - p)]}
 with \eqn{p} the proportion of the second class (\eqn{2 \log 2}{2 log 2}
-when \code{intercept = FALSE}).}
+when \code{intercept = FALSE}). For \code{"binomial"} each squared change
+is weighted by the coordinate's current curvature
+\eqn{\sum_i p_i(1 - p_i)F_{ij}^2/n} (the total weight for the
+intercept), as in glmnet, and the same criterion ends the reweighting
+iterations.}
 
 \item{maxit}{Coordinate-pass limit per second-coordinate value; default
-1e5. The solver stops when the total number of passes over the whole grid
-exceeds \code{maxit} times the length of the second grid (capped at the
-largest integer), leaving the remaining cells uncomputed with a warning.}
+1e5. For \code{"gaussian"} the solver stops when the total number of
+passes over the whole grid exceeds \code{maxit} times the length of the
+second grid (capped at the largest integer), leaving the remaining cells
+uncomputed with a warning. For \code{"binomial"} each second-coordinate
+value has its own budget of \code{maxit} passes (capped so that the grid
+total is at most the largest integer): a value whose cells use it up
+stops at the cell that did not converge, its remaining cells are left
+uncomputed with a warning, and the traversal continues with the other
+values.}
 }
 \value{
 A list of classes \code{suni2D} and \code{sunipath} with components:
@@ -257,9 +267,29 @@ Lambda-alpha and sum-rate traversal visits every second-coordinate value
   penalty.path records the actual traversal of the computed cells. Positive
   native error codes stop; negative codes warn and return partial output. A
   cell whose active set would exceed \code{pmax} is skipped and the
-  traversal continues; cells that would warm-start from it start from zero.
-  When the total pass limit is reached the traversal stops. Uncomputed grid
-  cells have missing intercepts, zero sparse slope placeholders and df 0.
+  traversal continues; cells that would warm-start from it start from zero
+  (binomial fits first try the previous first-coordinate value of the same
+  second-coordinate value). When the pass limit is reached the traversal
+  stops (binomial fits stop only the second-coordinate value concerned; see
+  \code{maxit}). Uncomputed grid cells have missing intercepts, zero sparse
+  slope placeholders and df 0.
+
+For \code{family = "binomial"} each cell is solved by iteratively
+  reweighted least squares, as in glmnet: the logistic loss is replaced by
+  its quadratic approximation at the current fit, with weights
+  \eqn{p_i(1 - p_i)/n}, and coordinate descent solves the penalized
+  weighted least-squares problem. Fitted probabilities within
+  \eqn{10^{-9}} of 0 or 1 are set to 0 or 1 and get zero weight. Along the
+  first coordinate, each second-coordinate value stops early once its fit
+  saturates, as glmnet stops its lambda path: after a cell whose total
+  weight is numerically zero, or, from its fifth computed cell on, after a
+  cell whose deviance ratio \eqn{1 - D/D_0} exceeds 0.999. Its remaining
+  cells are uncomputed. glmnet's rule of stopping once the deviance ratio
+  stops growing is not used, because with a nearly unpenalized side
+  (\code{alpha = 1}, a large \code{rate}) the deviance can stay flat over
+  several cells and then rise again. Unlike glmnet, the rules also apply to
+  a supplied grid, so the training-fold fits of \code{cv.suni2D}, which
+  reuse the full-data grid, stop as well.
 
   The first value of an automatically generated zeta grid (and of the
   lambda and sum grids, which are twice the zeta grid) is the smallest

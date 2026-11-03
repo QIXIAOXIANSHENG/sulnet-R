@@ -99,7 +99,9 @@ Fit once on all observations, then once per training fold. Ties at
   larger second coordinate first.
 
   A grid cell that the full-data fit or any fold did not compute (for
-  example beyond \code{pmax} or the pass limit) has NA in \code{cvm} and
+  example beyond \code{pmax} or the pass limit, or, for binomial fits, past
+  the point where its second-coordinate value stopped early; see
+  \code{\link{suni2D}}) has NA in \code{cvm} and
   \code{cvsd} and is never selected. The selected pairs are values of the
   full-data grid.
 }

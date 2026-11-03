@@ -6,7 +6,7 @@ library(uniLasso)
 ## as the simulation: suni2D (three parameterizations), uniLasso, lasso,
 ## adalasso_uni and adalasso_lasso.
 source("inst/simulation/compare_linear.R")
-csv_list = list.files(path = "./inst/linear_true_data/data", pattern = "csv", full.names = TRUE)
+csv_list <- list.files(path = "./inst/linear_true_data/data", pattern = "csv", full.names = TRUE)
 names(csv_list) <- sub("\\.csv$", "", basename(csv_list))
 
 ## Read one dataset. The response is the "target" column; every other column
@@ -30,7 +30,7 @@ read_real_data <- function(path) {
 ##   mse     mean squared prediction error on the validation rows
 ##   support number of nonzero slopes
 eval_split <- function(
-  x, y, train, foldid, s = c("min", "1se"), scale_y = TRUE
+  x, y, train, foldid, s = c("min", "1se"), scale_y = FALSE
 ) {
   s <- match.arg(s)
   xtrain <- x[train, , drop = FALSE]
@@ -115,12 +115,66 @@ dir.create(out_dir, showWarnings = FALSE)
 res_real <- list()
 for (i in seq_along(csv_list)) {
   name <- names(csv_list)[i]
+  if (file.exists(file.path(out_dir, paste0(name, ".rds")))) {
+    next
+  }
   message("dataset ", name)
   dat <- read_real_data(csv_list[[i]])
   set.seed(i)
   res_real[[name]] <- compare_real_data(
-    dat$x, dat$y, nsplit = 100, ncores = ncores
+    dat$x, dat$y,
+    nsplit = 100, ncores = ncores
   )
   print(res_real[[name]]$table)
   saveRDS(res_real[[name]], file.path(out_dir, paste0(name, ".rds")))
 }
+
+## Read one high-dimensional dataset: a list with X and y, and optionally
+## X.test and y.test. A supplied test set is appended to the training rows, so
+## the random 50-50 splits are drawn from the full data.
+read_high_dim_data <- function(path) {
+  dat <- readRDS(path)
+  x <- dat[["X"]]
+  y <- dat[["y"]]
+  if (!is.null(dat[["X.test"]])) {
+    stopifnot(
+      ncol(dat[["X.test"]]) == ncol(x),
+      identical(colnames(dat[["X.test"]]), colnames(x)),
+      length(dat[["y.test"]]) == nrow(dat[["X.test"]])
+    )
+    x <- rbind(x, dat[["X.test"]])
+    y <- c(y, dat[["y.test"]])
+  }
+  list(x = x, y = y)
+}
+
+## Run every high-dimensional dataset and save each result to the same folder.
+## The comparison is linear, so datasets with a non-numeric (class label)
+## response are skipped.
+rds_list <- list.files(
+  path = "./inst/linear_true_data/high_dim_data", pattern = "\\.rds$",
+  full.names = TRUE
+)
+names(rds_list) <- sub("\\.rds$", "", basename(rds_list))
+for (i in seq_along(rds_list)) {
+  name <- names(rds_list)[i]
+  if (file.exists(file.path(out_dir, paste0(name, ".rds")))) {
+    next
+  }
+  dat <- read_high_dim_data(rds_list[[i]])
+  if (!is.numeric(dat$y)) {
+    message("skipping ", name, ": response is a ", class(dat$y)[1])
+    next
+  }
+  message("dataset ", name, " (n = ", nrow(dat$x), ", p = ", ncol(dat$x), ")")
+  set.seed(i)
+  res_real[[name]] <- compare_real_data(
+    dat$x, dat$y,
+    nsplit = 100, ncores = ncores
+  )
+  print(res_real[[name]]$table)
+  saveRDS(res_real[[name]], file.path(out_dir, paste0(name, ".rds")))
+}
+
+# saveRDS(res_real[[name]], paste0("C:/Users/20020/Desktop/", name, ".rds"))
+# file.exists(file.path(out_dir, paste0(name, ".rds")))

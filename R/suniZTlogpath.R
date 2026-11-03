@@ -47,7 +47,7 @@ suniZTlogpath <- function(
     jerr = integer(1),
     PACKAGE = "sulnet"
   )
-  output <- getoutputZT(fit, maxit, pmax, nvars, vnames)
+  output <- getoutputZT(fit, maxit, pmax, nvars, vnames, perlevel = TRUE)
   gam <- theta2gamma(output, betaFIT)
   outlist <- list(
     gamma = gam$gamma,
