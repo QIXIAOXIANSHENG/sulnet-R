@@ -10,3 +10,7 @@ inst/cox tryout.RData
 .Rhistory
 cgseppath.r
 archive/agent/AGENTS.md
+*.rar
+*.zip
+inst/binomial_true_data/data/high_dim_data
+inst/binomial_true_data/data/UCI_data

@@ -127,3 +127,27 @@ for (b in 1:200) {
 res_model5 <- summarize_sim(res)
 res_model5$table
 saveRDS(res_model5, "./inst/simulation/binomial/res_model5.rds")
+
+
+# model 6, Breheny-Huang
+n <- 400
+p <- 1000
+ntest <- 100
+res <- list()
+for (b in 1:200) {
+  dat <- bh2011(
+    n = n,
+    p = p,
+    amplitude = 1,
+    n_test = ntest,
+    seed = b
+  )
+  x <- dat$train$x
+  y <- dat$train$y
+  xtest <- dat$test$x
+  gamma <- dat$beta
+  res[[b]] <- run_simulation_binom(x, y, gamma, xtest, B = 1)$raw[1, , ]
+}
+res_model6 <- summarize_sim(res)
+res_model6$table
+saveRDS(res_model6, "./inst/simulation/binomial/res_model6.rds")
