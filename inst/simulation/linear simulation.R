@@ -160,3 +160,20 @@ for (b in 1:B) {
 res_model5 <- summarize_sim(res)
 res_model5$table
 saveRDS(res_model5, "./inst/simulation/linear/res_model5.rds")
+
+
+# summary tables of all models in one pdf
+## Reads the saved res_model<k>.rds, so this part runs on its own.
+source("inst/simulation/table_simulation.R")
+res_linear <- read_sim_results("./inst/simulation/linear")
+write_sim_tables(res_linear,
+  file = "./inst/simulation/linear/linear_simulation_tables.pdf",
+  main = "Linear simulations",
+  captions = c(
+    "Model 1" = "Huang, AR(1) rho = 0.5; n = 100, p = 200, 15 nonzero; sigma = 1.5",
+    "Model 2" = "Huang, AR(1) rho = 0.95; n = 100, p = 200, 15 nonzero; sigma = 1.5",
+    "Model 3" = "Huang, 3 groups of 5 near-collinear signals; n = 100, p = 200; sigma = 1.5",
+    "Model 4" = "uniLasso, equicorrelated rho = 0.5; n = 300, p = 1000, 30 nonzero ~ U(0, 1); sigma = 0.1",
+    "Model 5" = "uniLasso home court, AR(1) rho = 0.8; n = 100, p = 30, 20% nonzero; SNR = 1"
+  )
+)

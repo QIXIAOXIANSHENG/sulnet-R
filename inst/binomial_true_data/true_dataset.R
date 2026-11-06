@@ -5,6 +5,8 @@ library(uniLasso)
 ## suni2D (three parameterizations), uniLasso, lasso, adalasso_uni and
 ## adalasso_lasso. summarize_sim() returns their means and standard errors.
 source("inst/simulation/compare_binom.R")
+## read_real_results() and plot_real_results() for the boxplots at the end.
+source("inst/simulation/plot_real_data.R")
 
 ## The CSVs written by prepare_uci_data.R and prepare_high_dim_data.R.
 csv_list <- list.files(
@@ -171,9 +173,7 @@ for (name in names(csv_list)) {
 ##                of splits in which the method finished
 ##   raw.csv      one row per dataset, split and method: the raw
 ##                misclassification rate and support
-res_files <- list.files(out_dir, pattern = "\\.rds$", full.names = TRUE)
-names(res_files) <- sub("\\.rds$", "", basename(res_files))
-res_all <- lapply(res_files, readRDS)
+res_all <- read_real_results(out_dir)
 summary_tab <- do.call(rbind, lapply(names(res_all), function(name) {
   r <- res_all[[name]]
   data.frame(
@@ -195,3 +195,10 @@ raw_tab <- do.call(rbind, lapply(names(res_all), function(name) {
 }))
 write.csv(summary_tab, file.path(out_dir, "summary.csv"), row.names = FALSE)
 write.csv(raw_tab, file.path(out_dir, "raw.csv"), row.names = FALSE)
+
+## One figure with a panel per dataset: boxplots over the splits of each
+## method's misclassification rate (left axis) and support (right axis).
+## outline = FALSE hides outlying splits and zooms both axes to the whiskers.
+plot_real_results(res_all,
+  file = file.path(out_dir, "binomial_true_data_boxplots.pdf")
+)

@@ -6,6 +6,8 @@ library(uniLasso)
 ## as the simulation: suni2D (three parameterizations), uniLasso, lasso,
 ## adalasso_uni and adalasso_lasso.
 source("inst/simulation/compare_linear.R")
+## read_real_results() and plot_real_results() for the boxplots at the end.
+source("inst/simulation/plot_real_data.R")
 csv_list <- list.files(path = "./inst/linear_true_data/data", pattern = "csv", full.names = TRUE)
 names(csv_list) <- sub("\\.csv$", "", basename(csv_list))
 
@@ -175,6 +177,15 @@ for (i in seq_along(rds_list)) {
   print(res_real[[name]]$table)
   saveRDS(res_real[[name]], file.path(out_dir, paste0(name, ".rds")))
 }
+
+## One figure with a panel per dataset (low- and high-dimensional): boxplots
+## over the splits of each method's mse (left axis) and support (right axis).
+## outline = FALSE hides outlying splits and zooms both axes to the whiskers,
+## which helps on cahousing and pollution.
+res_all <- read_real_results(out_dir)
+plot_real_results(res_all,
+  file = file.path(out_dir, "linear_true_data_boxplots.pdf")
+)
 
 # saveRDS(res_real[[name]], paste0("C:/Users/20020/Desktop/", name, ".rds"))
 # file.exists(file.path(out_dir, paste0(name, ".rds")))

@@ -151,3 +151,21 @@ for (b in 1:200) {
 res_model6 <- summarize_sim(res)
 res_model6$table
 saveRDS(res_model6, "./inst/simulation/binomial/res_model6.rds")
+
+
+# summary tables of all models in one pdf
+## Reads the saved res_model<k>.rds, so this part runs on its own.
+source("inst/simulation/table_simulation.R")
+res_binom <- read_sim_results("./inst/simulation/binomial")
+write_sim_tables(res_binom,
+  file = "./inst/simulation/binomial/binomial_simulation_tables.pdf",
+  main = "Binomial simulations",
+  captions = c(
+    "Model 1" = "uniLasso, AR(1) rho = 0.8, class mean shift in x1-x20; n = 100, p = 300, 30 nonzero",
+    "Model 2" = "independent; n = 200, p = 1000, 10 nonzero (+/-1)",
+    "Model 3" = "AR(1) rho = 0.5; n = 200, p = 1000, 10 nonzero (+/-1)",
+    "Model 4" = "block, size 20, rho = 0.5; n = 200, p = 1000, 10 nonzero (+/-1)",
+    "Model 5" = "imbalanced, AR(1) rho = 0.5, prevalence 0.2; n = 200, p = 1000, 10 nonzero (+/-1)",
+    "Model 6" = "Breheny-Huang (2011), independent; n = 400, p = 1000, 4 nonzero (+/-1)"
+  )
+)
