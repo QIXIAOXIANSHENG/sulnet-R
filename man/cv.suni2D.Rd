@@ -7,7 +7,7 @@
 cv.suni2D(
   x,
   y,
-  pred.loss = c("misclass", "loss"),
+  pred.loss = c("misclass", "loss", "Brier"),
   nfolds = 5,
   foldid,
   zeta = NULL,
@@ -30,8 +30,9 @@ columns; coerced to a dense matrix by the fitting function.}
 squared error, and \code{"misclass"} produces a warning and falls back to
 \code{"loss"}. For \code{family = "binomial"}, \code{"loss"} (the default)
 is the deviance \eqn{2\log(1 + e^{-yf})} with the link \eqn{f} clipped to
-\eqn{|f| \le \log(10^5 - 1)}, and \code{"misclass"} is the
-misclassification rate.}
+\eqn{|f| \le \log(10^5 - 1)}; \code{"misclass"} is the
+misclassification rate; \code{"Brier"} is the Brier Score
+\eqn{\left(\hat{p} - \frac{y+1}{2}\right)^2}}
 
 \item{nfolds}{Number of folds when \code{foldid} is omitted; default 5.}
 

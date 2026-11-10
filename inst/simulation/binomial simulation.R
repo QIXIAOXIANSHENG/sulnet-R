@@ -122,7 +122,10 @@ for (b in 1:200) {
   y <- dat$train$y
   xtest <- dat$test$x
   gamma <- dat$beta
-  res[[b]] <- run_simulation_binom(x, y, gamma, xtest, B = 1)$raw[1, , ]
+  res[[b]] <- run_simulation_binom(x, y,
+    gamma, xtest,
+    gamma0 = dat$intercept, B = 1
+  )$raw[1, , ]
 }
 res_model5 <- summarize_sim(res)
 res_model5$table

@@ -1,13 +1,15 @@
+#' @importFrom stats plogis
 cv.sunilogpath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
   typenames <- c(
     misclass = "Misclassification Error",
-    loss = "Margin Based Loss"
+    loss = "Margin Based Loss",
+    Brier = "Brier Score"
   )
   if (pred.loss == "default") {
     pred.loss <- "loss"
   }
-  if (!match(pred.loss, c("misclass", "loss"), FALSE)) {
-    warning("Only 'misclass' and 'loss' available for logistic regression; 'loss' used")
+  if (!match(pred.loss, c("misclass", "loss", "Brier"), FALSE)) {
+    warning("Only 'misclass', 'loss' and 'Brier' available for logistic regression; 'loss' used")
     pred.loss <- "loss"
   }
   prob_min <- 1e-05
@@ -40,7 +42,8 @@ cv.sunilogpath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
   cvraw <- lapply(predmatlist, function(predmat) {
     switch(pred.loss,
       loss = 2 * log(1 + exp(-y * predmat)),
-      misclass = (y != ifelse(predmat > 0, 1, -1))
+      misclass = (y != ifelse(predmat > 0, 1, -1)),
+      Brier = ((y + 1) / 2 - plogis(predmat))^2
     )
   })
   N <- lapply(predmatlist, function(predmat) {

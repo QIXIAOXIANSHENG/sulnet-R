@@ -30,7 +30,8 @@
 cv.sunipath <- function(outlist, method, pen, x, y, foldid, pred.loss) {
   typenames <- c(
     misclass = "Misclassification Error",
-    loss = "Least Square Loss"
+    loss = "Least Square Loss",
+    Brier = "Brier Score"
   )
   if (pred.loss == "default") {
     pred.loss <- "loss"

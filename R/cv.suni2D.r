@@ -23,8 +23,9 @@
 #'   squared error, and \code{"misclass"} produces a warning and falls back to
 #'   \code{"loss"}. For \code{family = "binomial"}, \code{"loss"} (the default)
 #'   is the deviance \eqn{2\log(1 + e^{-yf})} with the link \eqn{f} clipped to
-#'   \eqn{|f| \le \log(10^5 - 1)}, and \code{"misclass"} is the
-#'   misclassification rate.
+#'   \eqn{|f| \le \log(10^5 - 1)}; \code{"misclass"} is the
+#'   misclassification rate; \code{"Brier"} is the Brier Score
+#'   \eqn{\left(\hat{p} - \frac{y+1}{2}\right)^2}
 #' @param nfolds Number of folds when \code{foldid} is omitted; default 5.
 #' @param foldid Optional length-n vector of fold labels in 1 through the number
 #'   of folds. Its maximum replaces \code{nfolds}. Otherwise labels are randomly
@@ -81,7 +82,7 @@
 #' @importFrom stats setNames
 #' @export
 cv.suni2D <- function(
-  x, y, pred.loss = c("misclass", "loss"),
+  x, y, pred.loss = c("misclass", "loss", "Brier"),
   nfolds = 5, foldid, zeta = NULL, tau = NULL,
   lambda = NULL, alpha = NULL, sum = NULL, rate = NULL,
   method = c("zeta_tau", "lambda_alpha", "sum_rate"), ...
