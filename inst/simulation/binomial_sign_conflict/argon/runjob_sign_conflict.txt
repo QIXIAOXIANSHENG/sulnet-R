@@ -1,0 +1,23 @@
+#!/bin/sh
+## SGE job for one model of sign_conflict_simulation.R on Argon.
+## Submit from ~/sulnet/binomial_simulation, one job per model, e.g.
+##   qsub -N binom_sc_m7 runjob_sign_conflict.txt 7
+##   qsub -N binom_sc_m11 -pe smp 16 runjob_sign_conflict.txt 11
+## A rerun with the same model skips the replicates already saved in
+## results/sign_conflict/reps and only rebuilds res_model<k>.rds.
+#$ -l h_rt=12:00:00
+#$ -l mf=32G
+#$ -m abes
+#$ -M zhihan-chen@uiowa.edu
+#$ -q UI
+#$ -pe smp 40
+#$ -o /old_Users/zchen190/sulnet/binomial_simulation/stdout/
+#$ -e /old_Users/zchen190/sulnet/binomial_simulation/stderr/
+module load stack/2022.2
+module load cmake/3.25.0_gcc-9.5.0
+module load r/4.2.2_gcc-9.5.0
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+cd /old_Users/zchen190/sulnet/binomial_simulation
+Rscript scripts/sign_conflict_simulation.R "$1" 1:200 $NSLOTS scripts results/sign_conflict

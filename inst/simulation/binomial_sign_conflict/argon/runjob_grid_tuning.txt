@@ -1,0 +1,41 @@
+#!/bin/sh
+## SGE job for the grid-tuning scripts in ../grid_tuning on Argon. All scripts
+## (grid_tuning/*.R, compare_binom.R, binomial_simulation_setup.R) were copied
+## into ~/sulnet/binomial_simulation/scripts, so SIM_DIR = TUNE_DIR = scripts.
+## The first job argument is the script, the rest are its arguments without
+## ncores and out_dir (added here). Commands used in November 2026:
+##   qsub -N binom_sim_r1  runjob_grid_tuning.txt round1.R 1:6 1:30
+##   qsub -N binom_sim_r2a -pe smp 20 runjob_grid_tuning.txt round2.R zeta 1:6 1:30
+##   qsub -N binom_sim_r2b runjob_grid_tuning.txt round2.R dense 7:9 1:30
+##   qsub -N binom_sim_r3a runjob_grid_tuning.txt round3.R "c(12,13,15,16,22)" 1:30
+##   qsub -N binom_sim_r3b runjob_grid_tuning.txt round3.R "c(11,14,17,18,19,20,21)" 1:30
+##   qsub -N binom_sim_final  runjob_grid_tuning.txt final_30reps.R 1:9 1:30
+##   qsub -N binom_sim_final2 runjob_grid_tuning.txt final_30reps.R "c(11,12,13,15,16,19,22)" 1:30
+## Analysis (login node is fine, a few minutes):
+##   SIM_DIR=scripts TUNE_DIR=scripts Rscript scripts/analyze.R round1 results/round1 analysis/round1
+## (The original runs used an older argument order; results are unaffected.)
+#$ -l h_rt=06:00:00
+#$ -l mf=32G
+#$ -m abes
+#$ -M zhihan-chen@uiowa.edu
+#$ -q UI
+#$ -pe smp 40
+#$ -o /old_Users/zchen190/sulnet/binomial_simulation/stdout/
+#$ -e /old_Users/zchen190/sulnet/binomial_simulation/stderr/
+module load stack/2022.2
+module load cmake/3.25.0_gcc-9.5.0
+module load r/4.2.2_gcc-9.5.0
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export SIM_DIR=scripts TUNE_DIR=scripts
+cd /old_Users/zchen190/sulnet/binomial_simulation
+script=$1
+shift
+case "$script" in
+  round2.R) out=results/round2_$1 ;;
+  *) out=results/${script%.R} ;;
+esac
+## round1/round3/final_30reps: [models] [reps] [ncores] [out_dir];
+## round2: [set] [models] [reps] [ncores] [out_dir]
+Rscript scripts/$script "$@" $NSLOTS $out
