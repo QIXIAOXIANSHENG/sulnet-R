@@ -18,13 +18,112 @@ method_names <- c(
 )
 criteria_names <- c("sse", "rpe", "support", "sign", "tpr", "fpr")
 
+## Lambda paths of the glmnet-based methods (lasso, uniLasso, both adaptive
+## lassos), changed on 2026-11-12; see inst/simulation/linear_fixed/README.md.
+##   * glmnet's defaults end the path once the deviance ratio passes 0.999 or
+##     improves by less than 1e-5 per step (glmnet.control(devmax, fdev)). In
+##     high-SNR models (model 4: sigma = 0.1, R^2 about 0.9999) the path then
+##     stops before the lambda CV wants. fit_methods() sets fdev = 0 and
+##     devmax = 1 while it runs and restores the old values on exit.
+##   * glmnet's default lambda.min.ratio is 0.01 when n < p; lasso and uniLasso
+##     use GLMNET_LMR instead.
+##   * The adaptive penalty factors span up to five decades, so with the
+##     default path the variables with large weights never entered. The
+##     adaptive lassos use ADA_NLAMBDA values down to ADA_LMR * lambda_max.
+GLMNET_LMR <- 1e-4
+ADA_LMR <- 1e-6
+ADA_NLAMBDA <- 200L
+
+## Adaptive lasso with Zou (2006) weights w_j = 1 / |b_j| for a first-stage
+## estimate b; b_j = 0 means w_j = Inf, which drops variable j. It is fitted as
+## a plain lasso on the rescaled columns x_j |b_j| with standardize = FALSE,
+## which is the same problem as penalty.factor = w on the original scale but
+## keeps lambda on the scale of lambda * sum_j |beta_j| / |b_j| (glmnet
+## rescales penalty factors to sum to the number of variables), so that one
+## lambda sequence means the same penalty in every CV fold.
+ada_path <- function(x, y, b, lambda = NULL) {
+  keep <- which(b != 0)
+  scale <- abs(b[keep])
+  xs <- x[, keep, drop = FALSE] * rep(scale, each = nrow(x))
+  ## glmnet needs two columns; a constant column is never selected
+  if (length(keep) < 2L) xs <- cbind(xs, 0)
+  fit <- if (is.null(lambda)) {
+    glmnet(xs, y,
+      standardize = FALSE, lambda.min.ratio = ADA_LMR, nlambda = ADA_NLAMBDA
+    )
+  } else {
+    glmnet(xs, y, standardize = FALSE, lambda = lambda)
+  }
+  list(fit = fit, keep = keep, scale = scale)
+}
+ada_predict <- function(af, newx, s) {
+  xs <- newx[, af$keep, drop = FALSE] * rep(af$scale, each = nrow(newx))
+  if (length(af$keep) < 2L) xs <- cbind(xs, 0)
+  predict(af$fit, xs, s = s)
+}
+ada_coef <- function(af, s, p) {
+  b <- double(p)
+  b[af$keep] <- as.numeric(coef(af$fit, s = s))[1L + seq_along(af$keep)] *
+    af$scale
+  b
+}
+
+## Adaptive lasso tuned by honest 10-fold CV: in each fold the first stage is
+## refit on the training folds, so the held-out fold never influences the
+## weights. first(x, y, foldid) returns the first-stage slopes; foldid gives
+## the folds of an inner CV, if the first stage needs one. b is the
+## first stage on the full data. The CV error of each lambda is the mean
+## squared error over the folds, with its standard error, lambda.min and
+## lambda.1se defined as in cv.glmnet.
+ada_cv <- function(x, y, newx, foldid, b, first, s) {
+  p <- ncol(x)
+  if (all(b == 0)) {
+    return(list(coef = double(p), pred = rep(mean(y), nrow(newx))))
+  }
+  full <- ada_path(x, y, b)
+  lambda <- full$fit$lambda
+  nfolds <- max(foldid)
+  cvraw <- matrix(NA_real_, nfolds, length(lambda))
+  for (k in seq_len(nfolds)) {
+    tr <- foldid != k
+    ## the remaining folds, relabelled 1..nfolds-1, are the inner CV folds
+    inner <- as.integer(factor(foldid[tr]))
+    bk <- first(x[tr, , drop = FALSE], y[tr], inner)
+    pred <- if (all(bk == 0)) {
+      matrix(mean(y[tr]), sum(!tr), length(lambda))
+    } else {
+      ada_predict(ada_path(x[tr, , drop = FALSE], y[tr], bk, lambda),
+        x[!tr, , drop = FALSE], lambda)
+    }
+    cvraw[k, ] <- colMeans((y[!tr] - pred)^2)
+  }
+  nk <- tabulate(foldid, nfolds)
+  cvm <- colSums(nk * cvraw) / sum(nk)
+  cvsd <- sqrt(colSums(nk * sweep(cvraw, 2, cvm)^2) / sum(nk) / (nfolds - 1))
+  idmin <- which.min(cvm)
+  lam <- if (s == "min") {
+    lambda[idmin]
+  } else {
+    max(lambda[cvm <= cvm[idmin] + cvsd[idmin]])
+  }
+  list(
+    coef = ada_coef(full, lam, p),
+    pred = as.numeric(ada_predict(full, newx, lam))
+  )
+}
+
 ## Fit every method on (x, y) with shared CV folds. Returns the p x M matrix of
 ## slopes (intercepts dropped) and the nrow(newx) x M matrix of predictions.
+## No random numbers are drawn: every CV, including the inner CV of the
+## adaptive lassos' first stage, uses folds derived from foldid.
 fit_methods <- function(x, y, newx, foldid, s = c("min", "1se")) {
   s <- match.arg(s)
   s_glmnet <- paste0("lambda.", s)
   s_suni <- paste0("cv.", s)
   p <- ncol(x)
+  ctrl <- glmnet.control()
+  glmnet.control(fdev = 0, devmax = 1)
+  on.exit(glmnet.control(fdev = ctrl$fdev, devmax = ctrl$devmax), add = TRUE)
   na_fit <- list(coef = rep(NA_real_, p), pred = rep(NA_real_, nrow(newx)))
   safely <- function(name, expr) {
     tryCatch(expr, error = function(e) {
@@ -45,16 +144,13 @@ fit_methods <- function(x, y, newx, foldid, s = c("min", "1se")) {
       pred = as.numeric(predict(cvfit, newx, s = s_glmnet))
     )
   }
-  ## Zou (2006) weights w_j = 1 / |b_j|. A zero b_j gives an infinite weight,
-  ## which glmnet treats as an excluded variable. The weighted penalty is
-  ## defined on the original scale, so the reweighted fit is not standardized.
-  adalasso_out <- function(b) {
-    if (all(b == 0)) {
-      return(list(coef = double(p), pred = rep(mean(y), nrow(newx))))
-    }
-    glmnet_out(cv.glmnet(x, y,
-      foldid = foldid, penalty.factor = 1 / abs(b), standardize = FALSE
-    ))
+  ## first stages of the adaptive lassos
+  first_uni <- function(x, y, foldid) drop(cov(x, y)) / apply(x, 2, var)
+  first_lasso <- function(x, y, foldid) {
+    as.numeric(coef(
+      cv.glmnet(x, y, foldid = foldid, lambda.min.ratio = GLMNET_LMR),
+      s = s_glmnet
+    ))[-1]
   }
 
   fits <- list()
@@ -63,14 +159,20 @@ fit_methods <- function(x, y, newx, foldid, s = c("min", "1se")) {
     fits[[name]] <- safely(name, suni_out(method))
   }
   fits$uniLasso <- safely("uniLasso", glmnet_out(
-    cv.uniLasso(x, y, foldid = foldid)
+    cv.uniLasso(x, y, foldid = foldid, lambda.min.ratio = GLMNET_LMR)
   ))
-  fits$lasso <- safely("lasso", glmnet_out(cv.glmnet(x, y, foldid = foldid)))
-  uni_slope <- drop(cov(x, y)) / apply(x, 2, var)
-  fits$adalasso_uni <- safely("adalasso_uni", adalasso_out(uni_slope))
-  fits$adalasso_lasso <- safely(
-    "adalasso_lasso", adalasso_out(fits$lasso$coef)
-  )
+  fits$lasso <- safely("lasso", glmnet_out(
+    cv.glmnet(x, y, foldid = foldid, lambda.min.ratio = GLMNET_LMR)
+  ))
+  fits$adalasso_uni <- safely("adalasso_uni", ada_cv(
+    x, y, newx, foldid, first_uni(x, y, foldid), first_uni, s
+  ))
+  ## the full-data first stage is the lasso fit above
+  fits$adalasso_lasso <- safely("adalasso_lasso", if (anyNA(fits$lasso$coef)) {
+    stop("the lasso fit failed")
+  } else {
+    ada_cv(x, y, newx, foldid, fits$lasso$coef, first_lasso, s)
+  })
 
   fits <- fits[method_names]
   list(

@@ -171,19 +171,24 @@
 #'   Univariate preprocessing, when used, computes its own predictor-specific
 #'   intercepts.
 #' @param eps Convergence threshold for the native coordinate solver; default
-#'   1e-8. Coordinate descent at a grid cell stops when the largest squared
-#'   change of a coefficient in a full pass (on the solver's internal,
-#'   standardized when \code{standardize = TRUE}, predictor scale) is below
-#'   \code{eps} times the null deviance per observation. For
-#'   \code{"gaussian"} that is the variance of \code{y} (the mean of
+#'   1e-8. Coordinate descent at a grid cell stops when the largest weighted
+#'   squared change of a coefficient in a full pass is below \code{eps} times
+#'   the null deviance per observation. For \code{"gaussian"} the null
+#'   deviance per observation is the variance of \code{y} (the mean of
 #'   \code{y^2} when \code{intercept = FALSE}), so fits are invariant to
-#'   rescaling \code{y}; for \code{"binomial"} it is
+#'   rescaling \code{y}, and each squared change is weighted by the mean
+#'   square of its column of F on the solver's scale (the variance of
+#'   \eqn{F_j} after centering, 1 for a standardized column; 1 for the
+#'   intercept), as in glmnet. The weighted change is the mean squared change
+#'   of the fitted values, so the rule does not depend on \code{standardize}
+#'   or on the scale of the predictors. For \code{"binomial"} the null
+#'   deviance per observation is
 #'   \eqn{-2[p \log p + (1 - p) \log(1 - p)]}{-2[p log p + (1 - p) log(1 - p)]}
 #'   with \eqn{p} the proportion of the second class (\eqn{2 \log 2}{2 log 2}
-#'   when \code{intercept = FALSE}). For \code{"binomial"} each squared change
-#'   is weighted by the coordinate's current curvature
+#'   when \code{intercept = FALSE}), and each squared change is weighted by
+#'   the coordinate's current curvature
 #'   \eqn{\sum_i p_i(1 - p_i)F_{ij}^2/n} (the total weight for the
-#'   intercept), as in glmnet, and the same criterion ends the reweighting
+#'   intercept), as in glmnet; the same criterion ends the reweighting
 #'   iterations.
 #' @param maxit Coordinate-pass limit per second-coordinate value; default
 #'   1e5. For \code{"gaussian"} the solver stops when the total number of

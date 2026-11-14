@@ -182,7 +182,11 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
     jerr = jerr + ierr
     IF (jerr /= 0) RETURN
 
-    maj = 2.0D0*maj
+    ! maj(k) is the mean square of column k (its variance after centering),
+    ! so the coordinate update below is the exact minimizer along k, and
+    ! maj(k)*d**2 is the mean squared change of the fitted values. Weighting
+    ! the convergence test by it, as glmnet does, makes the stopping rule
+    ! independent of the column scales (standardize = TRUE or FALSE).
 
     ! convergence threshold: eps times the null deviance per observation
     ! (variance of y, or mean of y**2 without intercept), so that the
@@ -250,7 +254,7 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
                         END IF
                         d = t(k) - oldt
                         IF (ABS(d) > 0.0D0) THEN
-                            dif = MAX(dif, d**2)
+                            dif = MAX(dif, maj(k)*d**2)
                             r = r - x(:, k)*d
                             IF (mm(k) == 0) THEN
                                 ni = ni + 1
@@ -295,7 +299,7 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
                         END IF
                         d = t(k) - oldt
                         IF (ABS(d) > 0.0D0) THEN
-                            dif = MAX(dif, d**2)
+                            dif = MAX(dif, maj(k)*d**2)
                             r = r - x(:, k)*d
                         END IF
                     END DO
@@ -319,7 +323,8 @@ SUBROUTINE suniLANETpath(lam2, maj, nobs, nvars, x, y, ju, pf, pf2, pf3, &
             vrg = 1
             IF ((t(0) - oldtheta(0))**2 >= thr) vrg = 0
             DO j = 1, ni
-                IF ((t(itheta(j, iz, it)) - oldtheta(itheta(j, iz, it)))**2 >= thr) THEN
+                k = itheta(j, iz, it)
+                IF (maj(k)*(t(k) - oldtheta(k))**2 >= thr) THEN
                     vrg = 0
                     EXIT
                 END IF

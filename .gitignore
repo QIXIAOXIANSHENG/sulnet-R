@@ -14,3 +14,7 @@ archive/agent/AGENTS.md
 *.zip
 inst/binomial_true_data/data/high_dim_data
 inst/binomial_true_data/data/UCI_data
+
+# Ignore simulation repeat saves; keep each model's consolidated result.
+inst/simulation/**/*.rds
+!inst/simulation/**/res_model*.rds
